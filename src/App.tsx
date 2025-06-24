@@ -15,7 +15,9 @@ function App() {
         <Hero />
         <MembershipTiers />
         <Services />
-        <AppDownload />
+        <div id="app-download">
+          <AppDownload />
+        </div>
         <Testimonials />
       </main>
       <Footer />
