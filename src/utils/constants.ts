@@ -1,11 +1,10 @@
 import { MembershipTier, Service, Testimonial, NavItem } from '../types';
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'HealPass', href: '#healpass' },
   { label: 'Services', href: '#services' },
-  { label: 'Centers', href: '#centers' },
+  { label: 'Learn', href: '#learn' },
+  { label: 'About Us', href: '#about' },
   { label: 'Community', href: '#community' },
-  { label: 'Corporate', href: '#corporate' },
 ];
 
 export const MEMBERSHIP_TIERS: MembershipTier[] = [
@@ -85,80 +84,167 @@ export const MEMBERSHIP_TIERS: MembershipTier[] = [
 
 export const SERVICES: Service[] = [
   {
-    id: 'workouts',
-    title: 'HealFit Workouts',
-    description: 'Transform your body with expert-led fitness programs designed for every fitness level',
+    id: 'fitness-nutrition',
+    title: 'Fitness & Nutrition Coaching',
+    description: 'Personalized diet and workout plans tailored to your lifestyle, goals, and preferences for total body wellness.',
     icon: 'Dumbbell',
-    image: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=800',
-    features: ['HIIT Training', 'Strength Building', 'Cardio Blast', 'Functional Fitness', 'Group Classes', 'Personal Training']
+    image: 'https://images.pexels.com/photos/416809/pexels-photo-416809.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Certified fitness & nutrition coaches',
+      'Personalized plans for all ages',
+      'Weekly progress monitoring',
+      'Continuous support & motivation',
+      'Goal-based transformations'
+    ]
   },
   {
-    id: 'nutrition',
-    title: 'HealFit Nutrition',
-    description: 'Fuel your transformation with personalized meal plans and expert nutrition guidance',
+    id: 'yoga-meditation',
+    title: 'Yoga & Meditation',
+    description: 'Holistic yoga and meditation sessions to enhance flexibility, mindfulness, and inner peace for all levels.',
     icon: 'Apple',
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800',
-    features: ['Custom Meal Plans', 'Macro Tracking', 'Healthy Recipes', 'Nutrition Counseling', 'Diet Consultations', 'Supplement Guidance']
+    image: 'https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Certified yoga instructors',
+      'Guided meditation & breathwork',
+      'Stress reduction techniques',
+      'Improved flexibility & balance',
+      'Mind-body harmony'
+    ]
   },
   {
-    id: 'mindfulness',
-    title: 'HealFit Mindfulness',
-    description: 'Heal your mind through yoga, meditation, and stress management techniques',
+    id: 'mental-wellness',
+    title: 'Mental Wellness Coaching',
+    description: 'Expert guidance for mental health, stress management, and emotional resilience to help you thrive.',
     icon: 'Heart',
-    image: 'https://images.pexels.com/photos/3822864/pexels-photo-3822864.jpeg?auto=compress&cs=tinysrgb&w=800',
-    features: ['Yoga Classes', 'Meditation Sessions', 'Stress Management', 'Mindful Movement', 'Breathing Techniques', 'Mental Wellness']
+    image: 'https://images.pexels.com/photos/4101143/pexels-photo-4101143.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Certified mental wellness coaches',
+      'Stress & anxiety management',
+      'Emotional resilience training',
+      'Mindfulness & self-care routines',
+      'Confidential support'
+    ]
   },
   {
-    id: 'recovery',
-    title: 'HealFit Recovery',
-    description: 'Accelerate healing with professional therapy and recovery programs',
+    id: 'sleep-coaching',
+    title: 'Sleep Coaching',
+    description: 'Personalized sleep coaching to help you achieve restorative sleep and boost your overall health.',
     icon: 'Shield',
-    image: 'https://images.pexels.com/photos/7176325/pexels-photo-7176325.jpeg?auto=compress&cs=tinysrgb&w=800',
-    features: ['Physiotherapy', 'Sports Massage', 'Injury Rehabilitation', 'Recovery Protocols', 'Pain Management', 'Mobility Training']
+    image: 'https://images.pexels.com/photos/935743/pexels-photo-935743.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Sleep assessment & tracking',
+      'Personalized sleep plans',
+      'Insomnia & sleep disorder support',
+      'Healthy bedtime routines',
+      'Expert sleep coaches'
+    ]
+  },
+  {
+    id: 'habit-lifestyle',
+    title: 'Habit & Lifestyle Coaching',
+    description: 'Build sustainable healthy habits and positive lifestyle changes with expert coaching and accountability.',
+    icon: 'Heart',
+    image: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Personalized habit plans',
+      'Daily/weekly check-ins',
+      'Goal setting & tracking',
+      'Behavioral change strategies',
+      'Long-term accountability'
+    ]
+  },
+  {
+    id: 'community',
+    title: 'Supportive Community',
+    description: 'Join a vibrant, judgement-free community for motivation, support, and shared wellness journeys.',
+    icon: 'Apple',
+    image: 'https://images.pexels.com/photos/3184396/pexels-photo-3184396.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Active online forums',
+      'Group challenges & events',
+      'Peer motivation & support',
+      'Expert Q&A sessions',
+      'Inclusive for all ages'
+    ]
+  },
+  {
+    id: 'preventive-health',
+    title: 'Preventive Health Programs',
+    description: 'Proactive health screenings and wellness programs to prevent illness and promote lifelong vitality.',
+    icon: 'Shield',
+    image: 'https://images.pexels.com/photos/40568/medical-appointment-doctor-healthcare-40568.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Health risk assessments',
+      'Lifestyle disease prevention',
+      'Regular health checkups',
+      'Personalized wellness plans',
+      'Doctor & expert access'
+    ]
+  },
+  {
+    id: 'family-wellness',
+    title: 'Family Wellness',
+    description: 'Wellness programs designed for the whole family, including kids, seniors, and everyone in between.',
+    icon: 'Heart',
+    image: 'https://images.pexels.com/photos/1648376/pexels-photo-1648376.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Family fitness sessions',
+      'Nutrition for all ages',
+      'Parent-child wellness activities',
+      'Senior wellness support',
+      'Inclusive family plans'
+    ]
+  },
+  {
+    id: 'spiritual-wellness',
+    title: 'Spiritual Wellness',
+    description: 'Guidance and practices to nurture your spiritual well-being and find deeper meaning in life.',
+    icon: 'Apple',
+    image: 'https://images.pexels.com/photos/1051838/pexels-photo-1051838.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Guided spiritual practices',
+      'Mindfulness & gratitude sessions',
+      'Workshops & retreats',
+      'Holistic well-being focus',
+      'Open to all beliefs'
+    ]
   }
 ];
 
 export const TESTIMONIALS: Testimonial[] = [
   {
     id: '1',
-    name: 'Priya Sharma',
-    location: 'Mumbai',
-    image: 'https://images.pexels.com/photos/3768911/pexels-photo-3768911.jpeg?auto=compress&cs=tinysrgb&w=300',
-    text: 'HealFitness Zone transformed not just my body, but my entire mindset. The holistic approach to wellness is incredible! I lost 12kg in 6 months and feel more energetic than ever.'
+    name: 'Rajan & Richa',
+    location: 'Doctors',
+    image: 'https://images.pexels.com/photos/8451333/pexels-photo-8451333.jpeg?auto=compress&cs=tinysrgb&w=300',
+    text: "As busy doctors with kids, Heal Fitness Zone's easy-to-follow plans were a blessing!"
   },
   {
     id: '2',
-    name: 'Rajesh Kumar',
-    location: 'Bangalore',
-    image: 'https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=300',
-    text: 'Lost 15kg in 4 months with HealPass Pro. The combination of workouts and nutrition coaching is perfect. The trainers are supportive and the community keeps me motivated.'
+    name: 'Shilpa Mehta',
+    location: 'Working Professional',
+    image: 'https://images.pexels.com/photos/3771836/pexels-photo-3771836.jpeg?auto=compress&cs=tinysrgb&w=300',
+    text: 'Heal Fitness Zone inspired me to defeat low energy & body pain and get shredded!'
   },
   {
     id: '3',
-    name: 'Sneha Patel',
-    location: 'Delhi',
-    image: 'https://images.pexels.com/photos/3768916/pexels-photo-3768916.jpeg?auto=compress&cs=tinysrgb&w=300',
-    text: 'The mindfulness sessions helped me manage stress better. This is more than just a gym - it\'s a lifestyle change. The yoga and meditation classes are life-changing.'
+    name: 'Dr Anirudh Deepak',
+    location: 'Doctor',
+    image: 'https://images.pexels.com/photos/5215024/pexels-photo-5215024.jpeg?auto=compress&cs=tinysrgb&w=300',
+    text: 'At 194 kg, I felt like a ticking time bomb... but Heal Fitness Zone gave me a new life!'
   },
   {
     id: '4',
-    name: 'Arjun Singh',
-    location: 'Pune',
-    image: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=300',
-    text: 'The recovery therapy sessions helped me come back stronger after my sports injury. The physiotherapists are excellent and the equipment is top-notch.'
+    name: 'Austin & Niharika',
+    location: 'Couple',
+    image: 'https://images.pexels.com/photos/10156376/pexels-photo-10156376.jpeg?auto=compress&cs=tinysrgb&w=300',
+    text: 'From difficulty climbing the stairs to enjoying our healthiest lives together!'
   },
   {
     id: '5',
-    name: 'Kavya Reddy',
-    location: 'Hyderabad',
-    image: 'https://images.pexels.com/photos/3865711/pexels-photo-3865711.jpeg?auto=compress&cs=tinysrgb&w=300',
-    text: 'The personal training sessions with HealPass Elite are worth every penny. My trainer understands my goals and pushes me to achieve them safely.'
-  },
-  {
-    id: '6',
-    name: 'Vikram Mehta',
-    location: 'Chennai',
-    image: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=300',
-    text: 'The app makes it so convenient to book classes and track progress. The variety of workouts keeps things interesting and challenging.'
+    name: 'Surender & Trilochan',
+    location: 'Couple',
+    image: 'https://images.pexels.com/photos/16843343/pexels-photo-16843343.jpeg?auto=compress&cs=tinysrgb&w=300',
+    text: 'My wife & I feel at least 15 years younger than before, thanks to Heal Fitness Zone!'
   }
 ];
