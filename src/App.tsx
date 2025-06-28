@@ -7,17 +7,14 @@ import BMRCalculator from './components/tools/BMRCalculator';
 import BodyFatCalculator from './components/tools/BodyFatCalculator';
 import Calculators from './components/tools/Calculators';
 import MacroCalculator from './components/tools/MacroCalculator';
-// import AppDownload from './components/AppDownload';
 import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
-// import FittrHart from './components/FittrHart';
 import Community from './components/Community';
 import { useTheme } from './context/ThemeContext';
 import ToolsPage from './components/ToolsPage';
-import Onboarding from './components/Onboarding';
+import ModernOnboarding from './components/ModernOnboarding';
 import HeroStoryOnboarding from './components/HeroStoryOnboarding';
 import TimelineOnboarding from './components/TimelineOnboarding';
-import Login from './components/Login';
 import { useUser } from './context/UserContext';
 import Dashboard from './components/Dashboard';
 import AuthModal from './components/AuthModal';
@@ -26,23 +23,24 @@ type LandingPageProps = {
   user: any;
   onLogout: () => void;
 };
+
 const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
   const [showSignup, setShowSignup] = React.useState(false);
   return (
-  <>
+    <>
       <Header onSignupClick={() => setShowSignup(true)} />
-    <main>
-      <Hero />
-      <Services />
-      <Testimonials />
-      <Community />
-    </main>
-    <Footer />
+      <main>
+        <Hero />
+        <Services />
+        <Testimonials />
+        <Community />
+      </main>
+      <Footer />
       {showSignup && (
         <AuthModal onClose={() => setShowSignup(false)} />
       )}
-  </>
-);
+    </>
+  );
 };
 
 type AppRoutesProps = {
@@ -50,6 +48,7 @@ type AppRoutesProps = {
   onLogout: () => void;
   setUser: (user: any) => void;
 };
+
 const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
   const { theme } = useTheme();
 
@@ -63,7 +62,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
           <Footer />
         </>
       } />
-              <Route path="/calculators" element={
+      <Route path="/calculators" element={
         <>
           <Header onLoginClick={() => {}} />
           <Calculators />
@@ -103,19 +102,23 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
           <Footer />
         </>
       } />
-      <Route path="/onboarding" element={user ? <TimelineOnboarding /> : <Navigate to="/" />} />
+      
+      {/* Updated onboarding routes */}
+      <Route path="/onboarding" element={user ? <ModernOnboarding /> : <Navigate to="/" />} />
       <Route path="/hero-story" element={user ? <HeroStoryOnboarding /> : <Navigate to="/" />} />
       <Route path="/timeline" element={user ? <TimelineOnboarding /> : <Navigate to="/" />} />
+      
       <Route path="/dashboard" element={
         user
           ? isProfileComplete(user)
             ? <Dashboard />
-            : <Navigate to="/timeline" />
+            : <Navigate to="/onboarding" />
           : <Navigate to="/" />
       } />
+      
       <Route path="*" element={
         user && !isProfileComplete(user)
-          ? <Navigate to="/timeline" />
+          ? <Navigate to="/onboarding" />
           : <Navigate to="/" />
       } />
     </Routes>
