@@ -1,38 +1,87 @@
-import React, { useState } from 'react';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Menu, X, Sun, Moon, User as UserIcon, UserPlus, Camera } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { NAV_ITEMS } from '../utils/constants';
 import { useTheme } from '../context/ThemeContext';
-import logoLight from '../assets/videos/logo_white.png';
+import { useUser } from '../context/UserContext';
 import logoDark from '../assets/videos/logo_dark.png';
+import logoWhite from '../assets/videos/logo_white.png';
+import Login from './Login';
 
-const Header: React.FC = () => {
+export interface HeaderProps {
+  onLoginClick?: () => void;
+  onSignupClick?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { user, setUser, logout } = useUser();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginPrefill, setLoginPrefill] = useState<string | undefined>(undefined);
+
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        setUser({ ...user, photo: base64, defaultAvatar: undefined });
+        await fetch('/api/profile/photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photo: base64 })
+        });
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleViewCoaches = () => {
-    // Scroll to services section
     const servicesSection = document.getElementById('services');
     if (servicesSection) {
       servicesSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  // Add a global event listener for auto-switch from signup to login
+  React.useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail && e.detail.prefill) {
+        setLoginPrefill(e.detail.prefill);
+        setShowLogin(true);
+      }
+    };
+    window.addEventListener('open-login-with-prefill', handler);
+    return () => window.removeEventListener('open-login-with-prefill', handler);
+  }, []);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/30 dark:bg-gray-900/30 backdrop-blur-lg border-b border-white/20 dark:border-gray-500/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 md:h-24">
           {/* Logo and Slogan */}
-          <div className="flex items-center space-x-4">
+          <Link to="/" className="flex items-center space-x-4 group">
             <img
-              src={theme === 'dark' ? logoDark : logoLight}
+              src={theme === 'dark' ? logoDark : logoWhite}
               alt="Heal Fitness Zone Logo"
-              className="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-green-400 bg-white dark:bg-gray-900"
+              className="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-green-400 bg-white dark:bg-gray-900 group-hover:scale-105 transition-transform"
             />
             <div className="flex flex-col">
-              <span className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">Heal Fitness Zone</span>
+              <span className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight group-hover:text-green-500 transition-colors">Heal Fitness Zone</span>
               <span className="text-xs md:text-sm text-green-600 dark:text-green-400 font-medium tracking-wide mt-1">Empowering Wellness, Inspiring Lives</span>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
@@ -47,7 +96,7 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          {/* Desktop CTA */}
+          {/* Desktop CTA/User Avatar */}
           <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={toggleTheme}
@@ -56,15 +105,52 @@ const Header: React.FC = () => {
             >
               {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </button>
-            <button className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium text-sm lg:text-base">
-              Login
-            </button>
-            <button 
-              onClick={handleViewCoaches}
-              className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
-            >
-              View Coaches
-            </button>
+            {user ? (
+              <>
+                <div className="relative group">
+                  <div
+                    className={`w-12 h-12 rounded-full border-2 border-green-400 bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden shadow cursor-pointer hover:scale-105 transition-all ${uploading ? 'opacity-60' : ''}`}
+                    onClick={handleAvatarClick}
+                    title="Update profile photo"
+                  >
+                    {user.photo ? (
+                      <img src={user.photo} alt="Profile" className="object-cover w-full h-full" />
+                    ) : user.defaultAvatar ? (
+                      <span className="text-2xl select-none">{user.defaultAvatar}</span>
+                    ) : (
+                      <span className="text-gray-400 text-2xl flex items-center justify-center w-full h-full">
+                        <UserIcon className="w-8 h-8" />
+                      </span>
+                    )}
+                  </div>
+                  {uploading && <span className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/60 dark:bg-gray-900/60 rounded-full"><svg className="animate-spin h-6 w-6 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg></span>}
+                </div>
+              <button
+                  onClick={logout}
+                  className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium text-sm lg:text-base ml-2"
+              >
+                Logout
+              </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowLogin(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
+              >
+                <UserIcon className="w-5 h-5" />
+                Login
+              </button>
+            )}
+            {/* Signup button only visible when not logged in */}
+            {!user && (
+              <button
+                onClick={typeof onSignupClick === 'function' ? onSignupClick : () => setIsMenuOpen(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
+              >
+                <UserPlus className="w-5 h-5" />
+                Sign up to be healthy
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -99,19 +185,25 @@ const Header: React.FC = () => {
                   <span>Switch Theme</span>
                   {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                 </button>
-                <button className="block w-full text-left px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation">
-                  Login
-                </button>
-                <button 
-                  onClick={() => {
-                    handleViewCoaches();
-                    setIsMenuOpen(false);
-                  }}
-                  className="block w-full bg-gradient-to-r from-green-500 to-blue-500 text-white px-3 py-3 rounded-lg font-semibold touch-manipulation"
-                >
-                  View Coaches
-                </button>
+                {user ? (
+                  <button className="block w-full text-left px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation" onClick={logout}>
+                    Logout
+                  </button>
+                ) : (
+                  <button className="block w-full text-left px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation" onClick={() => setShowLogin(true)}>
+                    Login
+                  </button>
+                )}
               </div>
+            </div>
+          </div>
+        )}
+        {/* Login Modal */}
+        {showLogin && !user && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="relative">
+              <button onClick={() => setShowLogin(false)} className="absolute top-2 right-2 z-10 bg-white rounded-full p-2 shadow hover:bg-gray-100">✕</button>
+              <Login onClose={() => setShowLogin(false)} prefillPhone={loginPrefill} />
             </div>
           </div>
         )}

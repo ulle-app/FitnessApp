@@ -39,7 +39,7 @@ const Testimonials: React.FC = () => {
         <div className="text-center mt-16">
           <button className="bg-green-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-all duration-200 text-lg">
             Get free consultation
-          </button>
+            </button>
         </div>
       </div>
     </section>

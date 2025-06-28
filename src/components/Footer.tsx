@@ -61,10 +61,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-6">Tools</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">BMR Calculator</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Macro Calculator</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Body Fat Calculator</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">1RM Calculator</a></li>
+              <li><a href="/tools" className="text-gray-400 hover:text-white transition-colors">All Calculators</a></li>
             </ul>
           </div>
         </div>

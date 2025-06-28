@@ -208,6 +208,20 @@ export const SERVICES: Service[] = [
       'Holistic well-being focus',
       'Open to all beliefs'
     ]
+  },
+  {
+    id: 'kids-wellness',
+    title: 'Kids Wellness & Arts',
+    description: 'Engaging martial arts and classical dance classes for kids to promote discipline, creativity, and physical fitness.',
+    icon: 'Star',
+    image: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
+    features: [
+      'Expert-led martial arts classes',
+      'Classical and contemporary dance',
+      'Focus on discipline and respect',
+      'Creative expression and confidence',
+      'Fun and engaging activities'
+    ]
   }
 ];
 
