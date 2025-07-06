@@ -6,7 +6,9 @@ import {
   Activity, Award, Dumbbell, 
   Heart, Zap, Users, Info,
   Clock, ArrowRight, Calendar,
-  TrendingUp, TrendingDown
+  TrendingUp, TrendingDown, Target,
+  BarChart3, Flame, Utensils, 
+  Droplet, Moon, Scale, Ruler
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -21,19 +23,83 @@ const Dashboard: React.FC = () => {
   // State for assigned workouts
   const [assignedWorkouts, setAssignedWorkouts] = useState<any[]>([]);
   const [loadingWorkouts, setLoadingWorkouts] = useState(true);
+  
+  // State for progress data
+  const [progressData, setProgressData] = useState({
+    weightHistory: [78, 77.5, 76.8, 76.2, 75.5, 75.1, 74.8],
+    caloriesBurned: [320, 450, 280, 520, 380, 420, 350],
+    waterIntake: [1.8, 2.2, 1.9, 2.5, 2.1, 2.3, 2.0],
+    sleepHours: [6.5, 7.2, 6.8, 7.5, 7.0, 6.9, 7.3]
+  });
+
+  // Calculate BMI
+  const calculateBMI = () => {
+    if (!user?.height || !user?.weight) return null;
+    const heightInMeters = Number(user.height) / 100;
+    const bmi = Number(user.weight) / (heightInMeters * heightInMeters);
+    return bmi.toFixed(1);
+  };
+
+  // Get BMI category
+  const getBMICategory = (bmi: number) => {
+    if (bmi < 18.5) return { category: 'Underweight', color: 'text-blue-500' };
+    if (bmi < 25) return { category: 'Normal', color: 'text-green-500' };
+    if (bmi < 30) return { category: 'Overweight', color: 'text-yellow-500' };
+    return { category: 'Obese', color: 'text-red-500' };
+  };
+
+  // Calculate calories based on user data
+  const calculateCalories = () => {
+    if (!user?.gender || !user?.weight || !user?.height || !user?.dob) return null;
+    
+    // Calculate age
+    const birthDate = new Date(user.dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    // Mifflin-St Jeor Equation
+    let bmr = 0;
+    if (user.gender === 'male') {
+      bmr = 10 * Number(user.weight) + 6.25 * Number(user.height) - 5 * age + 5;
+    } else {
+      bmr = 10 * Number(user.weight) + 6.25 * Number(user.height) - 5 * age - 161;
+    }
+    
+    // Activity multiplier
+    let activityMultiplier = 1.2; // Sedentary
+    if (user.activityLevel === 'light') activityMultiplier = 1.375;
+    if (user.activityLevel === 'moderate') activityMultiplier = 1.55;
+    if (user.activityLevel === 'active') activityMultiplier = 1.725;
+    if (user.activityLevel === 'very_active') activityMultiplier = 1.9;
+    
+    const tdee = Math.round(bmr * activityMultiplier);
+    
+    return {
+      bmr: Math.round(bmr),
+      tdee: tdee,
+      // Macros based on fitness goal
+      protein: Math.round((user.fitnessGoal === 'gain_muscle' ? 0.3 : 0.25) * tdee / 4), // 4 calories per gram
+      carbs: Math.round((user.fitnessGoal === 'lose_weight' ? 0.4 : 0.5) * tdee / 4), // 4 calories per gram
+      fats: Math.round((user.fitnessGoal === 'lose_weight' ? 0.35 : 0.25) * tdee / 9) // 9 calories per gram
+    };
+  };
 
   // Stats data
   const stats = [
     { label: 'Workouts This Week', value: '4', icon: Dumbbell, color: 'bg-blue-500' },
-    { label: 'Calories Burned', value: '1,240', icon: Zap, color: 'bg-orange-500' },
+    { label: 'Calories Burned', value: '1,240', icon: Flame, color: 'bg-orange-500' },
     { label: 'Current Streak', value: '12 days', icon: Award, color: 'bg-green-500' },
     { label: 'Weight Progress', value: '-2.5 kg', icon: TrendingUp, color: 'bg-purple-500' },
   ];
 
   const quickActions = [
     { label: 'Start Workout', icon: Dumbbell, color: 'bg-blue-500', onClick: () => {} },
-    { label: 'Log Meal', icon: Heart, color: 'bg-red-500', onClick: () => {} },
-    { label: 'Track Weight', icon: TrendingUp, color: 'bg-green-500', onClick: () => {} },
+    { label: 'Log Meal', icon: Utensils, color: 'bg-red-500', onClick: () => {} },
+    { label: 'Track Weight', icon: Scale, color: 'bg-green-500', onClick: () => {} },
     { label: 'Join Community', icon: Users, color: 'bg-purple-500', onClick: () => {} },
   ];
 
@@ -122,6 +188,10 @@ const Dashboard: React.FC = () => {
     navigate('/login');
     return null;
   }
+
+  const bmi = calculateBMI();
+  const bmiInfo = bmi ? getBMICategory(Number(bmi)) : null;
+  const calorieInfo = calculateCalories();
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f]">
@@ -238,6 +308,274 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
 
+            {/* Onboarding Data Summary */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <Info className="w-5 h-5 text-blue-600" />
+                Your Fitness Profile
+              </h2>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {/* Height */}
+                <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Ruler className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Height</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    {user.height || '--'} <span className="text-sm">cm</span>
+                  </div>
+                </div>
+                
+                {/* Weight */}
+                <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4 border border-green-100 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Scale className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-medium text-green-800 dark:text-green-300">Weight</span>
+                  </div>
+                  <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                    {user.weight || '--'} <span className="text-sm">kg</span>
+                  </div>
+                </div>
+                
+                {/* BMI */}
+                <div className="bg-purple-50 dark:bg-purple-900/30 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span className="text-sm font-medium text-purple-800 dark:text-purple-300">BMI</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    {bmi || '--'}
+                  </div>
+                  {bmiInfo && (
+                    <div className={`text-xs ${bmiInfo.color}`}>
+                      {bmiInfo.category}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Age */}
+                <div className="bg-orange-50 dark:bg-orange-900/30 rounded-xl p-4 border border-orange-100 dark:border-orange-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <span className="text-sm font-medium text-orange-800 dark:text-orange-300">Age</span>
+                  </div>
+                  <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                    {user.dob ? new Date().getFullYear() - new Date(user.dob).getFullYear() : '--'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Fitness Goal */}
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <span className="font-medium text-gray-800 dark:text-gray-200">Fitness Goal</span>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                    {user.fitnessGoal?.replace(/_/g, ' ') || 'Not set'}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {user.fitnessGoal === 'lose_weight' && 'Focus on calorie deficit and cardio'}
+                    {user.fitnessGoal === 'gain_muscle' && 'Focus on protein intake and strength training'}
+                    {user.fitnessGoal === 'maintain' && 'Focus on balanced nutrition and consistent exercise'}
+                    {user.fitnessGoal === 'improve_fitness' && 'Focus on varied workouts and progressive overload'}
+                  </p>
+                </div>
+                
+                {/* Activity Level */}
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <span className="font-medium text-gray-800 dark:text-gray-200">Activity Level</span>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                    {user.activityLevel?.replace(/_/g, ' ') || 'Not set'}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {user.activityLevel === 'sedentary' && 'Little to no regular exercise'}
+                    {user.activityLevel === 'light' && 'Light exercise 1-3 days/week'}
+                    {user.activityLevel === 'moderate' && 'Moderate exercise 3-5 days/week'}
+                    {user.activityLevel === 'active' && 'Hard exercise 6-7 days/week'}
+                    {user.activityLevel === 'very_active' && 'Very hard exercise & physical job'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Nutrition & Calories */}
+            {calorieInfo && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-orange-600" />
+                  Nutrition & Calories
+                </h2>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  {/* BMR */}
+                  <div className="bg-orange-50 dark:bg-orange-900/30 rounded-xl p-4 border border-orange-100 dark:border-orange-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Flame className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                      <span className="text-sm font-medium text-orange-800 dark:text-orange-300">BMR</span>
+                    </div>
+                    <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                      {calorieInfo.bmr} <span className="text-sm">kcal</span>
+                    </div>
+                    <div className="text-xs text-orange-700 dark:text-orange-300">
+                      Basal Metabolic Rate
+                    </div>
+                  </div>
+                  
+                  {/* TDEE */}
+                  <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 border border-red-100 dark:border-red-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Activity className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <span className="text-sm font-medium text-red-800 dark:text-red-300">TDEE</span>
+                    </div>
+                    <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                      {calorieInfo.tdee} <span className="text-sm">kcal</span>
+                    </div>
+                    <div className="text-xs text-red-700 dark:text-red-300">
+                      Total Daily Energy
+                    </div>
+                  </div>
+                  
+                  {/* Target Calories */}
+                  <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4 border border-green-100 dark:border-green-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-medium text-green-800 dark:text-green-300">Target</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                      {user.fitnessGoal === 'lose_weight' 
+                        ? calorieInfo.tdee - 500 
+                        : user.fitnessGoal === 'gain_muscle' 
+                          ? calorieInfo.tdee + 300 
+                          : calorieInfo.tdee} <span className="text-sm">kcal</span>
+                    </div>
+                    <div className="text-xs text-green-700 dark:text-green-300">
+                      {user.fitnessGoal === 'lose_weight' && 'Calorie Deficit'}
+                      {user.fitnessGoal === 'gain_muscle' && 'Calorie Surplus'}
+                      {user.fitnessGoal !== 'lose_weight' && user.fitnessGoal !== 'gain_muscle' && 'Maintenance'}
+                    </div>
+                  </div>
+                  
+                  {/* Water Intake */}
+                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Droplet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Water</span>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {Math.round(Number(user.weight) * 0.033)} <span className="text-sm">L</span>
+                    </div>
+                    <div className="text-xs text-blue-700 dark:text-blue-300">
+                      Daily Target
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Macros */}
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Recommended Macros</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Protein</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{calorieInfo.protein}g</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500 rounded-full" style={{ width: '30%' }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Carbs</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{calorieInfo.carbs}g</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: '50%' }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Fats</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{calorieInfo.fats}g</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-500 rounded-full" style={{ width: '20%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Progress Charts */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                Your Progress
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Weight Progress */}
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                      <Scale className="w-4 h-4 text-green-600" />
+                      Weight Trend
+                    </h3>
+                    <span className="text-sm text-green-600 dark:text-green-400 font-medium">-3.2 kg</span>
+                  </div>
+                  <div className="h-32 flex items-end justify-between gap-1">
+                    {progressData.weightHistory.map((weight, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center">
+                        <div 
+                          className="w-full bg-green-500/80 dark:bg-green-600/80 rounded-t-sm" 
+                          style={{ 
+                            height: `${(weight - 70) / (80 - 70) * 100}%`,
+                            minHeight: '10%'
+                          }}
+                        ></div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {['M','T','W','T','F','S','S'][i]}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Sleep Tracking */}
+                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                      <Moon className="w-4 h-4 text-blue-600" />
+                      Sleep Quality
+                    </h3>
+                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">7.0 hrs avg</span>
+                  </div>
+                  <div className="h-32 flex items-end justify-between gap-1">
+                    {progressData.sleepHours.map((hours, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center">
+                        <div 
+                          className="w-full bg-blue-500/80 dark:bg-blue-600/80 rounded-t-sm" 
+                          style={{ 
+                            height: `${(hours - 5) / (9 - 5) * 100}%`,
+                            minHeight: '10%'
+                          }}
+                        ></div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {['M','T','W','T','F','S','S'][i]}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Actions */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
@@ -336,7 +674,7 @@ const Dashboard: React.FC = () => {
                   <div key={index} className="flex items-center p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700">
                     <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-xl flex items-center justify-center mr-4 text-green-600 dark:text-green-400">
                       {activity.type === 'workout' && <Dumbbell className="w-5 h-5" />}
-                      {activity.type === 'meal' && <Heart className="w-5 h-5" />}
+                      {activity.type === 'meal' && <Utensils className="w-5 h-5" />}
                       {activity.type === 'achievement' && <Award className="w-5 h-5" />}
                     </div>
                     <div className="flex-1">
@@ -421,6 +759,51 @@ const Dashboard: React.FC = () => {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Dietary Preferences */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-red-600" />
+                Dietary Preferences
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Diet Type
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-white capitalize">
+                    {user.dietaryPreference?.replace(/_/g, ' ') || 'Not set'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Allergies
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    {user.allergies || 'None reported'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Meal Frequency
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    4-5 meals/day
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Water Intake
+                  </span>
+                  <span className="text-sm text-gray-900 dark:text-white">
+                    {Math.round(Number(user.weight) * 0.033)}L daily
+                  </span>
+                </div>
               </div>
             </div>
 
