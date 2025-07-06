@@ -12,7 +12,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Info
+  Info,
+  X
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import BodyMeasurementForm from './BodyMeasurementForm';
@@ -21,6 +22,7 @@ import BodyMeasurementChart from './BodyMeasurementChart';
 interface BodyMeasurementHistoryProps {
   userId: string;
   userName: string;
+  onCancel?: () => void;
 }
 
 interface Measurement {
@@ -41,7 +43,8 @@ interface Measurement {
   waist_to_hip_ratio?: number;
   notes?: string;
 }
-
+  userName,
+  onCancel = () => {}
 const BodyMeasurementHistory: React.FC<BodyMeasurementHistoryProps> = ({ userId, userName }) => {
   const { user } = useUser();
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
@@ -133,17 +136,28 @@ const BodyMeasurementHistory: React.FC<BodyMeasurementHistoryProps> = ({ userId,
   return (
     <div className="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-800 w-full">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Scale className="w-6 h-6 text-blue-400" />
-          Body Measurements for {userName}
-        </h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Measurement
-        </button>
+        <div className="flex items-center justify-between w-full">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Scale className="w-6 h-6 text-blue-400" />
+            Body Measurements for {userName}
+          </h2>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Measurement
+            </button>
+            <button
+              onClick={onCancel}
+              className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {showForm ? (

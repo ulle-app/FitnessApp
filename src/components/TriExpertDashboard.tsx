@@ -456,13 +456,14 @@ const TriExpertDashboard: React.FC = () => {
                     {loading 
                       ? 'Assigning...' 
                       : `Assign ${selectedWorkouts.size} Workout${selectedWorkouts.size !== 1 ? 's' : ''}`}
-                  </button>
+                className="absolute top-4 right-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-white/50">
                   <Dumbbell className="w-16 h-16 mb-4" />
                   <p>Select a user to assign workouts</p>
                 </div>
+                onCancel={() => setShowBodyMeasurements(false)}
               )}
             </div>
           </div>
