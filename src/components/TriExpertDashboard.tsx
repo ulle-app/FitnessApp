@@ -515,6 +515,7 @@ const TriExpertDashboard: React.FC = () => {
             <button
               onClick={() => setShowBodyMeasurements(false)}
               className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+              aria-label="Close"
             >
               <X className="w-6 h-6" />
             </button>
@@ -529,4 +530,4 @@ const TriExpertDashboard: React.FC = () => {
   );
 };
 
-export default TriExpertDashboard; 
+export default TriExpertDashboard;
