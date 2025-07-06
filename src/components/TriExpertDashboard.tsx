@@ -449,6 +449,7 @@ const TriExpertDashboard: React.FC = () => {
                 <div className="flex flex-col items-center justify-center h-64 text-white/50">
                   <Dumbbell className="w-16 h-16 mb-4" />
                   <p>Select a user to assign workouts</p>
+                </div>
               )}
             </div>
           </div>
@@ -499,7 +500,7 @@ const TriExpertDashboard: React.FC = () => {
             
             <SwipeableWorkoutCards 
               workouts={workoutOptions.slice(0, 5)} 
-                  onCancel={() => setShowBodyMeasurements(false)}
+              onCancel={() => setShowBodyMeasurements(false)}
               assignedUsers={assignedUsers}
               onAssignWorkout={handleAssignWorkout}
             />
