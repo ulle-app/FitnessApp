@@ -43,9 +43,12 @@ interface Measurement {
   waist_to_hip_ratio?: number;
   notes?: string;
 }
-  userName,
-  onCancel = () => {}
-const BodyMeasurementHistory: React.FC<BodyMeasurementHistoryProps> = ({ userId, userName }) => {
+
+const BodyMeasurementHistory: React.FC<BodyMeasurementHistoryProps> = ({ 
+  userId, 
+  userName, 
+  onCancel = () => {} 
+}) => {
   const { user } = useUser();
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [loading, setLoading] = useState(true);
