@@ -31,7 +31,9 @@
 +      return;
 +    }
 +    
-+    if (user.role !== 'trainer') {
++    if (user.role !=  }
+  )
+= 'trainer') {
 +      console.log('User is not a trainer, redirecting');
 +      navigate('/');
 +    }
