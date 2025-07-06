@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 
+
 interface ModernSignUpProps {
   onClose: () => void;
 }
@@ -271,7 +272,10 @@ const ModernSignUp: React.FC<ModernSignUpProps> = ({ onClose }) => {
       {step === 'signup' && (
         <form onSubmit={handleSignUp} className="w-full flex flex-col gap-6 animate-fade-in">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-extrabold text-gray-900 text-center flex-1">Sign Up</h2>
+            <h2 className="text-2xl font-extrabold text-gray-900 text-center flex-1">
+              <img src="/logo_dark.png" alt="Heal Fitness Zone Logo" className="w-10 h-10 mx-auto mb-2 rounded-full border-2 border-green-400 bg-white" />
+              Sign Up
+            </h2>
             <button onClick={onClose} type="button" className="ml-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full p-2 transition-colors" aria-label="Close sign up">✕</button>
           </div>
           <input
