@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, CheckCircle, Dumbbell, Footprints, Activity, Target, Info, Users, TrendingUp } from 'lucide-react';
+import { User, CheckCircle, Dumbbell, Footprints, Activity, Target, Info, Users, TrendingUp, Scale, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import WorkoutCard from './WorkoutCard';
