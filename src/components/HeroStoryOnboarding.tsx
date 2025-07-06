@@ -104,7 +104,7 @@ const HeroStoryOnboarding: React.FC = () => {
       const responseData = await res.json();
       if (responseData.success) {
         setUser({ ...user, ...data, photo: data.photo || data.avatar || '' });
-        navigate('/dashboard');
+        // navigate('/dashboard'); // Removed redirect - will decide later
       } else {
         setError(responseData.error || 'Failed to save profile. Please try again.');
       }
@@ -563,17 +563,28 @@ const HeroStoryOnboarding: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Stress Level</h3>
               </div>
               <div className="space-y-3">
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={data.stressLevel}
-                  onChange={(e) => handleDataChange('stressLevel', e.target.value)}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                />
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-center gap-2 my-2">
+                  {[...Array(10)].map((_, i) => {
+                    const percent = i / 9;
+                    const color = `hsl(${120 - percent * 120}, 80%, 45%)`;
+                    const selected = String(i + 1) === String(data.stressLevel || '5');
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-label={`Stress level ${i + 1}`}
+                        onClick={() => handleDataChange('stressLevel', String(i + 1))}
+                        className={`w-7 h-7 rounded-full transition-all border-2 flex items-center justify-center focus:outline-none ${selected ? 'scale-125 border-black shadow-lg' : 'border-gray-200'}`}
+                        style={{ background: color }}
+                      >
+                        {selected && <span className="text-xs font-bold text-white drop-shadow">{i + 1}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between text-sm font-semibold text-gray-800">
                   <span>😌 Low</span>
-                  <span className="font-medium text-lg">{data.stressLevel}</span>
+                  <span className="font-bold text-xl text-red-600">{data.stressLevel}</span>
                   <span>😰 High</span>
                 </div>
               </div>

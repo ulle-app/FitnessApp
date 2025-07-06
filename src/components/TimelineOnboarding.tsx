@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Camera, Activity, HeartPulse, MapPin, Calendar, 
   ChevronDown, ChevronUp, Sparkles, Star, Trophy, Target,
-  ArrowRight, CheckCircle, Circle, Play
+  ArrowRight, CheckCircle, Circle, Play, X
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -55,6 +55,36 @@ const initialData: TimelineData = {
   country: '',
 };
 
+// Add a simple confetti component
+const Confetti = () => (
+  <div style={{ pointerEvents: 'none', position: 'fixed', inset: 0, zIndex: 1000 }}>
+    {[...Array(60)].map((_, i) => (
+      <div
+        key={i}
+        style={{
+          position: 'absolute',
+          left: `${Math.random() * 100}%`,
+          top: `-${Math.random() * 20 + 5}%`,
+          width: 10 + Math.random() * 8,
+          height: 18 + Math.random() * 10,
+          background: `hsl(${Math.random() * 360}, 80%, 60%)`,
+          borderRadius: '3px',
+          opacity: 0.85,
+          transform: `rotate(${Math.random() * 360}deg)`,
+          animation: `confetti-fall 1.8s cubic-bezier(.62,.01,.27,1) ${Math.random() * 0.8}s both`,
+        }}
+      />
+    ))}
+    <style>{`
+      @keyframes confetti-fall {
+        0% { opacity: 0.7; transform: translateY(0) scale(1) rotate(0deg); }
+        80% { opacity: 1; }
+        100% { opacity: 0; transform: translateY(110vh) scale(0.7) rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
 const TimelineOnboarding: React.FC = () => {
   const { user, setUser } = useUser();
   const navigate = useNavigate();
@@ -65,6 +95,31 @@ const TimelineOnboarding: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [inputErrors, setInputErrors] = useState<{ [key: string]: string }>({});
+  const [showOnboarding, setShowOnboarding] = useState(true);
+
+  const isStorybook = Boolean((window as any).__STORYBOOK_ADDONS || (window as any).STORYBOOK_ENV);
+
+  console.log('RENDER data state', data); // DEBUG
+
+  // Ensure data state always has all required fields - run only once on mount
+  useEffect(() => {
+    // Force ensure all fields are present
+    setData(prev => {
+      const updated = { ...initialData, ...prev };
+      console.log('Ensuring all fields present:', updated);
+      return updated;
+    });
+  }, []); // Empty dependency array - run only once
+
+  // Debug: Log when data state changes
+  useEffect(() => {
+    console.log('Data state changed:', data);
+    console.log('sleepHours in data:', data.sleepHours);
+    console.log('All fields present:', Object.keys(initialData).every(key => key in data));
+    console.log('sleepHours value:', data.sleepHours, 'type:', typeof data.sleepHours); // DEBUG
+  }, [data]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -76,7 +131,47 @@ const TimelineOnboarding: React.FC = () => {
   }, [currentStep]);
 
   const handleDataChange = (field: keyof TimelineData, value: string) => {
-    setData(prev => ({ ...prev, [field]: value }));
+    console.log('handleDataChange', field, value); // DEBUG
+    let valid = true;
+    let error = '';
+    if (field === 'height') {
+      const num = Number(value);
+      if (isNaN(num) || num < 100 || num > 250) {
+        valid = false;
+        error = 'Height must be between 100 and 250 cm.';
+      }
+    } else if (field === 'weight') {
+      const num = Number(value);
+      if (isNaN(num) || num < 30 || num > 250) {
+        valid = false;
+        error = 'Weight must be between 30 and 250 kg.';
+      }
+    } else if (field === 'stressLevel') {
+      const num = Number(value);
+      if (isNaN(num)) {
+        valid = false;
+        error = 'Please enter a valid number.';
+      }
+    } else if (typeof value === 'string' && (field === 'username' || field === 'fullName' || field === 'city' || field === 'country')) {
+      if (/[^a-zA-Z0-9 _-]/.test(value)) {
+        valid = false;
+        error = 'Only letters, numbers, spaces, - and _ are allowed.';
+      }
+    }
+    if (!valid) {
+      setInputErrors(prev => ({ ...prev, [field]: error }));
+      return;
+    } else {
+      setInputErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    setData(prev => {
+      const updated = { ...prev, [field]: value };
+      console.log('data state after update', updated); // DEBUG
+      // Ensure all fields from initialData are present
+      const finalState = { ...initialData, ...updated };
+      console.log('final state with all fields', finalState); // DEBUG
+      return finalState;
+    });
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,8 +205,20 @@ const TimelineOnboarding: React.FC = () => {
       });
       const responseData = await res.json();
       if (responseData.success) {
-        setUser({ ...user, ...data, photo: data.photo || data.avatar || '' });
-        navigate('/dashboard');
+        // Mark onboarding as completed
+        const onboardingRes = await fetch('/api/complete-onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: user?.phone })
+        });
+        
+        if (onboardingRes.ok) {
+          setUser({ ...user, ...data, photo: data.photo || data.avatar || '', onboarding_completed: 'true' });
+          setShowCelebration(true); // Show celebration overlay
+          // navigate('/dashboard'); // Removed redirect - will decide later
+        } else {
+          setError('Failed to complete onboarding. Please try again.');
+        }
       } else {
         setError(responseData.error || 'Failed to save profile. Please try again.');
       }
@@ -123,13 +230,13 @@ const TimelineOnboarding: React.FC = () => {
 
   const steps = [
     {
-      id: 'name',
-      title: 'Hero Name',
+      id: 'profile_nickname',
+      title: 'Profile/Nick Name',
       icon: User,
       type: 'text',
       field: 'username',
       placeholder: 'e.g. IronRunner, FitGuru, WellnessWarrior',
-      description: 'Pick a fun nickname for your fitness journey! This will be visible to others.',
+      description: 'Pick a fun profile or nickname! This will be visible to others.',
       required: true,
       position: { x: 0, y: 0 }
     },
@@ -339,18 +446,55 @@ const TimelineOnboarding: React.FC = () => {
     let inputElement = null;
     switch (step.type) {
       case 'text':
-        inputElement = (
-          <input
-            key={step.id}
-            ref={inputRef as React.RefObject<HTMLInputElement>}
-            type="text"
-            value={value || ''}
-            onChange={(e) => handleDataChange(step.field as keyof TimelineData, e.target.value)}
-            placeholder={step.placeholder}
-            className="w-full px-4 py-3 text-lg bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-300 focus:border-blue-400 focus:outline-none transition-all"
-            onKeyDown={handleInputKeyDown}
-          />
-        );
+        if (step.field === 'height') {
+          inputElement = (
+            <div className="w-full flex flex-col items-center">
+              <div className="mb-2 text-lg font-semibold text-white">{value || 170} cm</div>
+              <input
+                type="range"
+                min={100}
+                max={250}
+                step={1}
+                value={value || 170}
+                onChange={e => handleDataChange('height', e.target.value)}
+                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer text-white"
+              />
+              {inputErrors.height && <div className="text-red-500 text-sm mt-1">{inputErrors.height}</div>}
+            </div>
+          );
+        } else if (step.field === 'weight') {
+          inputElement = (
+            <div className="w-full flex flex-col items-center">
+              <div className="mb-2 text-lg font-semibold text-white">{value || 70} kg</div>
+              <input
+                type="range"
+                min={30}
+                max={250}
+                step={1}
+                value={value || 70}
+                onChange={e => handleDataChange('weight', e.target.value)}
+                className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer text-white"
+              />
+              {inputErrors.weight && <div className="text-red-500 text-sm mt-1">{inputErrors.weight}</div>}
+            </div>
+          );
+        } else {
+          inputElement = (
+            <input
+              key={step.id}
+              ref={inputRef as React.RefObject<HTMLInputElement>}
+              type="text"
+              value={value || ''}
+              onChange={(e) => handleDataChange(step.field as keyof TimelineData, e.target.value)}
+              placeholder={step.placeholder}
+              className="w-full px-4 py-3 text-lg bg-[#23232b] text-white border-2 border-gray-700 focus:border-blue-400 focus:outline-none transition-all placeholder-gray-400"
+              onKeyDown={handleInputKeyDown}
+            />
+          );
+          if (inputErrors[step.field]) {
+            inputElement = <div className="flex flex-col">{inputElement}<div className="text-red-500 text-sm mt-1">{inputErrors[step.field]}</div></div>;
+          }
+        }
         break;
       
       case 'date':
@@ -361,7 +505,7 @@ const TimelineOnboarding: React.FC = () => {
             type="date"
             value={value || ''}
             onChange={(e) => handleDataChange(step.field as keyof TimelineData, e.target.value)}
-            className="w-full px-4 py-3 text-lg bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-300 focus:border-blue-400 focus:outline-none transition-all"
+            className="w-full px-4 py-3 text-lg bg-[#23232b] text-white border-2 border-gray-700 focus:border-blue-400 focus:outline-none transition-all placeholder-gray-400"
             onKeyDown={handleInputKeyDown}
           />
         );
@@ -369,75 +513,113 @@ const TimelineOnboarding: React.FC = () => {
       
       case 'dropdown':
         if (step.field === 'avatar' && step.options) {
-          const selectedAvatar = step.options.find(opt => String(opt.id) === value);
+          const selectedAvatar = step.options.find(opt => opt.id === Number(value));
           inputElement = (
-            <div className="relative w-full">
-              <button
-                key={step.id}
-                ref={inputRef as React.RefObject<HTMLButtonElement>}
-                onClick={() => setShowDropdown(showDropdown === step.id ? null : step.id)}
-                className="w-full px-4 py-3 text-lg bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-300 focus:border-blue-400 focus:outline-none transition-all flex items-center justify-between"
-                onKeyDown={handleInputKeyDown}
-              >
-                <span className="flex items-center gap-2">
-                  {selectedAvatar && 'src' in selectedAvatar && (
-                    <img src={selectedAvatar.src} alt={selectedAvatar.label} className="w-8 h-8 rounded-full border border-green-400" />
-                  )}
-                  <span className={value ? 'text-gray-900' : 'text-gray-500'}>
-                    {selectedAvatar ? selectedAvatar.label : step.placeholder || 'Select...'}
-                  </span>
-                </span>
-                <ChevronDown className={`w-5 h-5 transition-transform ${showDropdown === step.id ? 'rotate-180' : ''}`} />
-              </button>
-              {showDropdown === step.id && (
-                <div
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border-2 border-green-400 shadow-lg z-50 max-h-60 overflow-y-auto"
-                >
-                  {step.options.map((option) => (
+            <div className="flex flex-col md:flex-row items-center gap-8 w-full justify-center">
+              {/* Photo Upload */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-blue-300 shadow-md mb-2">
+                  {data.photo ? (
+                    <img src={data.photo} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
                     <button
-                      key={option.id}
-                      onClick={() => {
-                        handleDataChange(step.field as keyof TimelineData, String(option.id));
-                        setShowDropdown(null);
-                      }}
-                      className="w-full px-4 py-3 text-left transition-colors border-b border-gray-100 last:border-b-0 flex items-center gap-3 hover:bg-green-100 hover:border-l-4 hover:border-green-500"
                       type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-full flex items-center justify-center text-gray-400 hover:text-blue-500"
                     >
-                      {'src' in option && (
-                        <img src={option.src} alt={option.label} className="w-8 h-8 rounded-full border border-green-400" />
-                      )}
-                      <div>
-                        <div className="font-medium text-gray-900">{option.label}</div>
-                        {option.description && (
-                          <div className="text-sm text-gray-600">{option.description}</div>
-                        )}
-                      </div>
+                      <Camera className="w-10 h-10" />
                     </button>
-                  ))}
+                  )}
+                  {data.photo && (
+                    <button
+                      type="button"
+                      onClick={() => handleDataChange('photo', '')}
+                      className="absolute top-1 right-1 bg-white/80 rounded-full p-1 shadow hover:bg-red-100"
+                      title="Remove photo"
+                    >
+                      <X className="w-4 h-4 text-red-500" />
+                    </button>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
                 </div>
-              )}
+                <div className="text-xs text-gray-500">Upload Photo</div>
+              </div>
+              {/* Avatar Selection */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center overflow-hidden border-4 border-pink-300 shadow-md mb-2">
+                  {data.avatar ? (
+                    <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-10 h-10 text-white" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowDropdown(showDropdown === step.id ? null : step.id)}
+                    className="absolute bottom-1 right-1 bg-white/80 rounded-full p-1 shadow hover:bg-green-100"
+                    title="Change avatar"
+                  >
+                    <ChevronDown className={`w-4 h-4 text-green-500 transition-transform ${showDropdown === step.id ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showDropdown === step.id && (
+                    <div
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-[#23232b] rounded-xl border-2 border-green-400 shadow-lg z-50 p-2 flex flex-col gap-2"
+                    >
+                      {step.options.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => {
+                            handleDataChange('avatar', String(option.id));
+                            setShowDropdown(null);
+                          }}
+                          className="flex items-center gap-2 p-2 hover:bg-green-50 rounded-lg transition-colors"
+                          type="button"
+                        >
+                          {'src' in option && (
+                            <img src={option.src} alt={option.label} className="w-8 h-8 rounded-full border border-green-400" />
+                          )}
+                          <div>
+                            <div className="font-medium text-white">{option.label}</div>
+                            <div className="text-sm text-gray-200">{option.description}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">Choose Avatar</div>
+              </div>
             </div>
           );
-        } else {
-          const selectedOption = step.options?.find(opt => String(opt.id) === String(value));
+        } else if (step.options) {
+          const selectedOption = step.options.find(opt => String(opt.id) === String(value));
+          console.log('renderInput', step.field, value, selectedOption ? selectedOption.label : 'none'); // DEBUG
+          console.log('DEBUG: step.options:', step.options); // DEBUG
+          console.log('DEBUG: value type:', typeof value, 'value:', value); // DEBUG
+          console.log('DEBUG: comparing with option ids:', step.options.map(opt => ({ id: opt.id, idType: typeof opt.id, stringId: String(opt.id) }))); // DEBUG
           inputElement = (
             <div className="relative w-full">
               <button
                 key={step.id}
                 ref={inputRef as React.RefObject<HTMLButtonElement>}
                 onClick={() => setShowDropdown(showDropdown === step.id ? null : step.id)}
-                className="w-full px-4 py-3 text-lg bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-300 focus:border-blue-400 focus:outline-none transition-all flex items-center justify-between"
+                className="w-full px-4 py-3 text-lg bg-[#23232b] text-white border-2 border-gray-700 focus:border-blue-400 focus:outline-none transition-all flex items-center justify-between"
                 onKeyDown={handleInputKeyDown}
                 type="button"
               >
-                <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+                <span className={selectedOption ? 'text-white' : 'text-gray-400'}>
                   {selectedOption ? selectedOption.label : step.placeholder || 'Select...'}
                 </span>
                 <ChevronDown className={`w-5 h-5 transition-transform ${showDropdown === step.id ? 'rotate-180' : ''}`} />
               </button>
               {showDropdown === step.id && step.options && (
                 <div
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border-2 border-green-400 shadow-lg z-50 max-h-60 overflow-y-auto"
+                  className="absolute top-full left-0 right-0 mt-2 bg-[#23232b] rounded-xl border-2 border-green-400 shadow-lg z-50 max-h-60 overflow-y-auto"
                 >
                   {step.options.map((option) => (
                     <button
@@ -449,9 +631,9 @@ const TimelineOnboarding: React.FC = () => {
                       className="w-full px-4 py-3 text-left transition-colors border-b border-gray-100 last:border-b-0 hover:bg-green-100 hover:border-l-4 hover:border-green-500"
                       type="button"
                     >
-                      <div className="font-medium text-gray-900">{option.label}</div>
+                      <div className="font-medium text-white">{option.label}</div>
                       {option.description && (
-                        <div className="text-sm text-gray-600">{option.description}</div>
+                        <div className="text-sm text-gray-200">{option.description}</div>
                       )}
                     </button>
                   ))}
@@ -463,24 +645,34 @@ const TimelineOnboarding: React.FC = () => {
         break;
       
       case 'slider':
+        // Heatmap-style selector for stress level
         inputElement = (
           <div className="w-full space-y-4">
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-sm font-semibold text-gray-800">
               <span>Low Stress</span>
               <span>High Stress</span>
             </div>
-            <input
-              key={step.id}
-              ref={inputRef as React.RefObject<HTMLInputElement>}
-              type="range"
-              min={step.min || 1}
-              max={step.max || 10}
-              value={value || '5'}
-              onChange={(e) => handleDataChange(step.field as keyof TimelineData, e.target.value)}
-              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-              onKeyDown={handleInputKeyDown}
-            />
-            <div className="text-center text-2xl font-bold text-green-600">{value || '5'}</div>
+            <div className="flex justify-center gap-2 my-2">
+              {[...Array(10)].map((_, i) => {
+                // Gradient from green (low) to red (high)
+                const percent = i / 9;
+                const color = `hsl(${120 - percent * 120}, 80%, 45%)`;
+                const selected = String(i + 1) === String(value || '5');
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Stress level ${i + 1}`}
+                    onClick={() => handleDataChange(step.field as keyof TimelineData, String(i + 1))}
+                    className={`w-7 h-7 rounded-full transition-all border-2 flex items-center justify-center focus:outline-none ${selected ? 'scale-125 border-black shadow-lg' : 'border-gray-200'}`}
+                    style={{ background: color }}
+                  >
+                    {selected && <span className="text-xs font-bold text-white drop-shadow">{i + 1}</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-center text-2xl font-bold text-red-600">{value || '5'}</div>
           </div>
         );
         break;
@@ -494,7 +686,7 @@ const TimelineOnboarding: React.FC = () => {
             onChange={(e) => handleDataChange(step.field as keyof TimelineData, e.target.value)}
             placeholder={step.placeholder}
             rows={4}
-            className="w-full px-4 py-3 text-lg bg-white/90 backdrop-blur-sm rounded-xl border-2 border-gray-300 focus:border-blue-400 focus:outline-none transition-all resize-none"
+            className="w-full px-4 py-3 text-lg bg-[#23232b] text-white border-2 border-gray-700 focus:border-blue-400 focus:outline-none transition-all resize-none placeholder-gray-400"
           />
         );
         break;
@@ -515,156 +707,151 @@ const TimelineOnboarding: React.FC = () => {
 
   const currentStepData = steps[currentStep];
 
+  if (!showOnboarding) return null;
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 relative overflow-hidden">
-      {/* Timeline Path */}
-      <div className="absolute inset-0 pointer-events-none">
-        <svg className="w-full h-full" viewBox="0 0 2800 800" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10B981" />
-              <stop offset="50%" stopColor="#3B82F6" />
-              <stop offset="100%" stopColor="#8B5CF6" />
-            </linearGradient>
-          </defs>
-          {/* Winding Path */}
-          <path
-            d="M 50 400 Q 200 200 400 400 T 800 400 T 1200 400 T 1600 400 T 2000 400 T 2400 400 T 2800 400"
-            stroke="url(#pathGradient)"
-            strokeWidth="8"
-            fill="none"
-            strokeDasharray="20 10"
-            className="animate-pulse"
-          />
-        </svg>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
-          {/* Progress Header */}
-          <div className="text-center mb-8">
-            <motion.h1
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="text-3xl font-bold text-white mb-4"
-            >
-              Step {currentStep + 1} of {steps.length}
-            </motion.h1>
-            
-            <div className="w-full bg-white/20 rounded-full h-3 mb-4">
-              <motion.div
-                className="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-            
-            <p className="text-white/80 text-lg">
-              {currentStepData?.title} - {Math.round(((currentStep + 1) / steps.length) * 100)}% Complete
-            </p>
-          </div>
-
-          {/* Current Step Content */}
-          <AnimatePresence mode="wait">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="relative max-w-md w-full bg-[#18181b] rounded-2xl shadow-2xl p-8 flex flex-col items-center animate-fade-in border border-gray-800">
+        <button
+          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl focus:outline-none"
+          aria-label="Close onboarding"
+          onClick={() => setShowOnboarding(false)}
+        >
+          <X className="w-6 h-6" />
+        </button>
+        {/* Progress Header */}
+        <div className="text-center mb-8">
+          <motion.h1
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="text-3xl font-bold text-white mb-4"
+          >
+            Step {currentStep + 1} of {steps.length}
+          </motion.h1>
+          <div className="w-full bg-white/20 rounded-full h-3 mb-4">
             <motion.div
-              key={currentStep}
-              initial={{ x: 100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -100, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 shadow-2xl"
-            >
-              {currentStepData && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mb-4">
-                      <currentStepData.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{currentStepData.title}</h2>
-                    <p className="text-gray-600">Complete this step to continue your journey</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {renderInput(currentStepData)}
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-                      {error}
-                    </div>
-                  )}
-
-                  {/* Navigation - inside card, at bottom */}
-                  <div className="flex justify-between items-center mt-8">
-                    <motion.button
-                      onClick={handlePrevious}
-                      disabled={currentStep === 0}
-                      className={`flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all text-2xl ${
-                        currentStep === 0
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-white/20 text-gray-700 hover:bg-white/30 backdrop-blur-sm'
-                      }`}
-                      whileHover={currentStep > 0 ? { scale: 1.15 } : {}}
-                      whileTap={currentStep > 0 ? { scale: 0.95 } : {}}
-                      aria-label="Previous"
-                    >
-                      <ArrowRight className="w-8 h-8 rotate-180" />
-                    </motion.button>
-
-                    {currentStep === steps.length - 1 ? (
-                      <motion.button
-                        onClick={handleSubmit}
-                        disabled={loading || !canProceedToNext()}
-                        className={`flex items-center justify-center px-8 py-3 rounded-xl font-medium transition-all text-2xl ${
-                          loading || !canProceedToNext()
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:shadow-lg'
-                        }`}
-                        whileHover={!loading && canProceedToNext() ? { scale: 1.15 } : {}}
-                        whileTap={!loading && canProceedToNext() ? { scale: 0.95 } : {}}
-                        aria-label="Complete"
-                      >
-                        {loading ? (
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                        ) : (
-                          <Sparkles className="w-8 h-8" />
-                        )}
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        onClick={handleNext}
-                        disabled={!canProceedToNext()}
-                        className={`flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all text-2xl ${
-                          !canProceedToNext()
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-500 to-green-500 text-white hover:shadow-lg'
-                        }`}
-                        whileHover={canProceedToNext() ? { scale: 1.15 } : {}}
-                        whileTap={canProceedToNext() ? { scale: 0.95 } : {}}
-                        aria-label="Next"
-                      >
-                        <ArrowRight className="w-8 h-8" />
-                      </motion.button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+              className="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
         </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -100, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            {currentStepData && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <motion.div
+                    key={currentStepData.id}
+                    initial={{ scale: 0.7, opacity: 0, y: -20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, type: 'spring' }}
+                    className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mb-4 shadow-lg"
+                  >
+                    <currentStepData.icon className="w-8 h-8 text-white" />
+                  </motion.div>
+                  <h2 className="text-2xl font-bold text-white mb-2">{currentStepData.title}</h2>
+                  <p className="text-gray-300">{currentStep === steps.length - 1 ? 'This is the final step! 🎉' : 'Complete this step to continue your journey'}</p>
+                </div>
+                <div className="space-y-4">
+                  {renderInput(currentStepData)}
+                </div>
+                {error && (
+                  <div className="bg-red-900/80 border border-red-400 text-red-300 px-4 py-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+                {/* Navigation - inside card, at bottom */}
+                <div className="flex justify-between items-center mt-8">
+                  <motion.button
+                    onClick={handlePrevious}
+                    disabled={currentStep === 0}
+                    className={`flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all text-2xl ${
+                      currentStep === 0
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm'
+                    }`}
+                    whileHover={currentStep > 0 ? { scale: 1.15 } : {}}
+                    whileTap={currentStep > 0 ? { scale: 0.95 } : {}}
+                    aria-label="Previous"
+                  >
+                    <ArrowRight className="w-8 h-8 rotate-180" />
+                  </motion.button>
+                  {currentStep === steps.length - 1 ? (
+                    <motion.button
+                      onClick={handleSubmit}
+                      disabled={loading || !canProceedToNext()}
+                      className={`flex items-center justify-center px-10 py-4 rounded-2xl font-bold transition-all text-2xl shadow-xl ${
+                        loading || !canProceedToNext()
+                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-black hover:bg-gray-200'
+                      }`}
+                      whileHover={!loading && canProceedToNext() ? { scale: 1.12 } : {}}
+                      whileTap={!loading && canProceedToNext() ? { scale: 0.98 } : {}}
+                      aria-label="Complete"
+                    >
+                      {loading ? (
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                      ) : (
+                        <span className="flex items-center gap-2"><Sparkles className="w-8 h-8" /> Complete</span>
+                      )}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      onClick={handleNext}
+                      disabled={!canProceedToNext()}
+                      className={`flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all text-2xl ${
+                        !canProceedToNext()
+                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-black hover:bg-gray-200'
+                      }`}
+                      whileHover={canProceedToNext() ? { scale: 1.15 } : {}}
+                      whileTap={canProceedToNext() ? { scale: 0.95 } : {}}
+                      aria-label="Next"
+                    >
+                      <ArrowRight className="w-8 h-8" />
+                    </motion.button>
+                  )}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
-
-      {/* Click outside to close dropdowns */}
-      {showDropdown && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowDropdown(null)}
-        />
+      {/* Celebration Overlay */}
+      {showCelebration && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-lg animate-fade-in">
+          <Confetti />
+          <div className="bg-white/95 rounded-3xl shadow-2xl px-10 py-12 max-w-lg w-full flex flex-col items-center text-center border-4 border-green-400">
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.7, type: 'spring' }}
+              className="mb-6"
+            >
+              <Star className="w-16 h-16 text-yellow-400 drop-shadow-lg animate-bounce" />
+            </motion.div>
+            <h1 className="text-4xl font-extrabold text-green-600 mb-2">Welcome, {data.username || 'Hero'}!</h1>
+            <p className="text-xl text-gray-700 mb-4 font-semibold">Your fitness journey starts now 🚀</p>
+            <div className="text-lg font-bold text-blue-700 mb-6">Onboarding Complete</div>
+            <button
+              className="mt-2 px-8 py-3 rounded-full bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-blue-600 transition-all"
+              onClick={() => setShowCelebration(false)}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
-export default TimelineOnboarding; 
+export default TimelineOnboarding;

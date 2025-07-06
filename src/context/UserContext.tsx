@@ -5,6 +5,9 @@ export interface User {
   username?: string;
   phone?: string;
   photo?: string;
+  role?: string;
+  specialty?: string;
+  onboarding_completed?: string;
   [key: string]: any;
 }
 

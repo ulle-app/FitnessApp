@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Services from './components/Services';
@@ -21,16 +21,29 @@ import Login from './components/Login';
 import { useUser } from './context/UserContext';
 import Dashboard from './components/Dashboard';
 import AuthModal from './components/AuthModal';
+import AdminDashboard from './components/AdminDashboard';
+import EntryPage from './components/EntryPage';
+import MyTimeLogs from './components/MyTimeLogs';
+import AdminTimeLogs from './components/AdminTimeLogs';
+import WorkoutManagement from './components/WorkoutManagement';
+import TriExpertDashboard from './components/TriExpertDashboard';
 
 type LandingPageProps = {
   user: any;
   onLogout: () => void;
 };
-const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ user, onLogout }) => {
   const [showSignup, setShowSignup] = React.useState(false);
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+  React.useEffect(() => {
+    if (user) {
+      onLogout();
+    }
+  }, [user, onLogout]);
   return (
   <>
-      <Header onSignupClick={() => setShowSignup(true)} />
+      {!isLoginPage && <Header onSignupClick={() => setShowSignup(true)} />}
     <main>
       <Hero />
       <Services />
@@ -50,29 +63,50 @@ type AppRoutesProps = {
   onLogout: () => void;
   setUser: (user: any) => void;
 };
-const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
+const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser, onLogout }) => {
   const { theme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'expert') {
+        navigate('/expert');
+      } else if (user.role === 'user') {
+        // Check if user has completed onboarding
+        if (user.onboarding_completed !== 'true') {
+          navigate('/timeline');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    }
+  }, [user, navigate]);
+
+  const isLoginPage = location.pathname === '/login';
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage user={user} onLogout={() => {}} />} />
+      <Route path="/" element={<LandingPage user={user} onLogout={onLogout} />} />
       <Route path="/tools" element={
         <>
-          <Header onLoginClick={() => {}} />
+          {!isLoginPage && <Header onLoginClick={() => {}} />}
           <ToolsPage />
           <Footer />
         </>
       } />
-              <Route path="/calculators" element={
+      <Route path="/calculators" element={
         <>
-          <Header onLoginClick={() => {}} />
+          {!isLoginPage && <Header onLoginClick={() => {}} />}
           <Calculators />
           <Footer />
         </>
       } />
       <Route path="/bmr-calculator" element={
         <>
-          <Header onLoginClick={() => {}} />
+          {!isLoginPage && <Header onLoginClick={() => {}} />}
           <section className={`min-h-screen w-full flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-white via-gray-100 to-white'}`}> 
             <div className="w-full max-w-2xl px-4 pb-16 flex justify-center">
               <BMRCalculator />
@@ -83,7 +117,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
       } />
       <Route path="/body-fat-calculator" element={
         <>
-          <Header onLoginClick={() => {}} />
+          {!isLoginPage && <Header onLoginClick={() => {}} />}
           <section className={`min-h-screen w-full flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-white via-gray-100 to-white'}`}> 
             <div className="w-full max-w-2xl px-4 pb-16 flex justify-center">
               <BodyFatCalculator />
@@ -94,7 +128,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
       } />
       <Route path="/macro-calculator" element={
         <>
-          <Header onLoginClick={() => {}} />
+          {!isLoginPage && <Header onLoginClick={() => {}} />}
           <section className={`min-h-screen w-full flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-br from-white via-gray-100 to-white'}`}> 
             <div className="w-full max-w-5xl px-4 pb-16 flex justify-center">
               <MacroCalculator />
@@ -108,13 +142,21 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
       <Route path="/timeline" element={user ? <TimelineOnboarding /> : <Navigate to="/" />} />
       <Route path="/dashboard" element={
         user
-          ? isProfileComplete(user)
+          ? (isProfileComplete(user) && user.onboarding_completed === 'true')
             ? <Dashboard />
             : <Navigate to="/timeline" />
           : <Navigate to="/" />
       } />
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/entry" element={<EntryPage />} />
+      <Route path="/my-logs" element={<MyTimeLogs />} />
+      <Route path="/my-attendance" element={<Navigate to="/my-logs" />} />
+      <Route path="/admin/time-logs" element={<AdminTimeLogs />} />
+      <Route path="/admin/workouts" element={<WorkoutManagement />} />
+      <Route path="/trainer" element={<TrainerDashboard />} />
       <Route path="*" element={
-        user && !isProfileComplete(user)
+        user && user.role === 'user' && user.onboarding_completed !== 'true'
           ? <Navigate to="/timeline" />
           : <Navigate to="/" />
       } />
@@ -129,7 +171,9 @@ function isProfileComplete(user: any) {
   return required.every(f => user[f]);
 }
 
-function App() {
+const TrainerDashboard = TriExpertDashboard;
+
+const App = () => {
   const { user, setUser, logout } = useUser();
   return (
     <BrowserRouter>

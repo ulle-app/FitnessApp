@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Menu, X, Sun, Moon, User as UserIcon, UserPlus, Camera } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, Sun, Moon, User as UserIcon, UserPlus, Camera, Lock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from '../utils/constants';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
@@ -11,16 +11,16 @@ import Login from './Login';
 export interface HeaderProps {
   onLoginClick?: () => void;
   onSignupClick?: () => void;
+  onChangePassword?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onChangePassword }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, setUser, logout } = useUser();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [loginPrefill, setLoginPrefill] = useState<string | undefined>(undefined);
+  const navigate = useNavigate();
 
   const handleAvatarClick = () => {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -58,13 +58,12 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
   React.useEffect(() => {
     const handler = (e: any) => {
       if (e.detail && e.detail.prefill) {
-        setLoginPrefill(e.detail.prefill);
-        setShowLogin(true);
+        navigate('/login');
       }
     };
     window.addEventListener('open-login-with-prefill', handler);
     return () => window.removeEventListener('open-login-with-prefill', handler);
-  }, []);
+  }, [navigate]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/30 dark:bg-gray-900/30 backdrop-blur-lg border-b border-white/20 dark:border-gray-500/20">
@@ -83,28 +82,8 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            {NAV_ITEMS.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium transition-colors duration-200 text-sm lg:text-base"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          {/* Desktop CTA/User Avatar */}
+          {/* Desktop: Only show avatar/photo and logout if logged in */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-            </button>
             {user ? (
               <>
                 <div className="relative group">
@@ -125,35 +104,45 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
                   </div>
                   {uploading && <span className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/60 dark:bg-gray-900/60 rounded-full"><svg className="animate-spin h-6 w-6 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg></span>}
                 </div>
-              <button
-                  onClick={logout}
+                {user.role === 'admin' && (
+                  <button
+                    onClick={onChangePassword}
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm lg:text-base px-3 py-2 rounded transition border border-blue-100 bg-blue-50 hover:bg-blue-100"
+                    title="Change Password"
+                  >
+                    <Lock className="w-5 h-5" />
+                    <span className="hidden md:inline">Change Password</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => { logout(); navigate('/', { replace: true }); }}
                   className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium text-sm lg:text-base ml-2"
-              >
-                Logout
-              </button>
+                >
+                  Logout
+                </button>
               </>
             ) : (
-              <button
-                onClick={() => setShowLogin(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
-              >
-                <UserIcon className="w-5 h-5" />
-                Login
-              </button>
-            )}
-            {/* Signup button only visible when not logged in */}
-            {!user && (
-              <button
-                onClick={typeof onSignupClick === 'function' ? onSignupClick : () => setIsMenuOpen(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
-              >
-                <UserPlus className="w-5 h-5" />
-                Sign up to be healthy
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
+                >
+                  <UserIcon className="w-5 h-5" />
+                  Login
+                </button>
+                {/* Signup button only visible when not logged in */}
+                <button
+                  onClick={typeof onSignupClick === 'function' ? onSignupClick : () => setIsMenuOpen(true)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 lg:px-6 lg:py-2 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 text-sm lg:text-base"
+                >
+                  <UserPlus className="w-5 h-5" />
+                  Sign up to be healthy
+                </button>
+              </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile: Only show avatar/photo and logout if logged in */}
           <button
             className="md:hidden p-2 touch-manipulation"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -167,43 +156,51 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
         {isMenuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="block px-3 py-3 text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium touch-manipulation"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <div className="pt-4 space-y-3 border-t border-gray-100 dark:border-gray-700 mt-3">
-                <button 
-                  onClick={toggleTheme}
-                  className="w-full flex justify-between items-center px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation"
-                >
-                  <span>Switch Theme</span>
-                  {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                </button>
-                {user ? (
-                  <button className="block w-full text-left px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation" onClick={logout}>
+              {user ? (
+                <div className="flex items-center space-x-4 py-4">
+                  <div
+                    className={`w-12 h-12 rounded-full border-2 border-green-400 bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden shadow`}
+                  >
+                    {user.photo ? (
+                      <img src={user.photo} alt="Profile" className="object-cover w-full h-full" />
+                    ) : user.defaultAvatar ? (
+                      <span className="text-2xl select-none">{user.defaultAvatar}</span>
+                    ) : (
+                      <span className="text-gray-400 text-2xl flex items-center justify-center w-full h-full">
+                        <UserIcon className="w-8 h-8" />
+                      </span>
+                    )}
+                  </div>
+                  <button className="text-gray-700 dark:text-gray-200 font-medium" onClick={logout}>
                     Logout
                   </button>
-                ) : (
-                  <button className="block w-full text-left px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation" onClick={() => setShowLogin(true)}>
-                    Login
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Login Modal */}
-        {showLogin && !user && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="relative">
-              <button onClick={() => setShowLogin(false)} className="absolute top-2 right-2 z-10 bg-white rounded-full p-2 shadow hover:bg-gray-100">✕</button>
-              <Login onClose={() => setShowLogin(false)} prefillPhone={loginPrefill} />
+                </div>
+              ) : (
+                <>
+                  {NAV_ITEMS.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      className="block px-3 py-3 text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium touch-manipulation"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                  <div className="pt-4 space-y-3 border-t border-gray-100 dark:border-gray-700 mt-3">
+                    <button 
+                      onClick={toggleTheme}
+                      className="w-full flex justify-between items-center px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation"
+                    >
+                      <span>Switch Theme</span>
+                      {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    </button>
+                    <button className="block w-full text-left px-3 py-3 text-gray-700 dark:text-gray-200 font-medium touch-manipulation" onClick={() => navigate('/login')}>
+                      Login
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
