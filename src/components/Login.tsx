@@ -24,11 +24,15 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
+    console.log('Login attempt:', { isPhone, identifier, password });
 
     try {
       const loginData = isPhone 
         ? { phone: identifier, password }
         : { email: identifier, password };
+      
+      console.log('Sending login request with data:', loginData);
 
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -36,18 +40,27 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
         body: JSON.stringify(loginData)
       });
 
+      console.log('Login response status:', res.status);
       const data = await res.json();
+      console.log('Login response data:', data);
       
       if (data.success) {
         setUser(data.user);
         onClose();
         
         // Check if profile is complete
+        const isTrainer = data.user.role === 'trainer' || data.user.role === 'expert';
         const required = ['fullName', 'gender', 'dob', 'height', 'weight'];
-        const isComplete = required.every(field => data.user[field]);
+        const isComplete = isTrainer || required.every(field => data.user[field]);
         
         if (isComplete) {
-          navigate('/dashboard');
+          if (data.user.role === 'trainer') {
+            navigate('/trainer');
+          } else if (data.user.role === 'expert') {
+            navigate('/expert');
+          } else {
+            navigate('/dashboard');
+          }
         } else {
           navigate('/timeline');
         }
@@ -56,6 +69,7 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
         setLoading(false);
       }
     } catch (err: any) {
+      console.error('Login error:', err);
       setError('Network error. Please try again.');
     }
   };

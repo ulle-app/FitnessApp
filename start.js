@@ -1,5 +1,5 @@
 // Startup script to run both backend and frontend servers
-const { spawn } = require('child_process');
+import { spawn } from 'child_process';
 
 // Colors for console output
 const colors = {

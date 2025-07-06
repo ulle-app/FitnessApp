@@ -244,6 +244,7 @@ app.get('/api/profile/:id', (req, res) => {
 app.post('/api/login', (req, res) => {
   let { phone, password } = req.body;
   console.log('[DEBUG] /api/login called with phone:', phone);
+  console.log('[DEBUG] Password provided:', password ? 'Yes' : 'No');
   // Normalize phone: remove all non-digit characters
   if (typeof phone === 'string') {
     phone = phone.replace(/\D/g, '');
@@ -255,12 +256,16 @@ app.post('/api/login', (req, res) => {
       console.log('[DEBUG] No user found for phone:', phone);
       return res.json({ success: false, error: 'User not found' });
     }
+    console.log('[DEBUG] User found:', user.username, 'Role:', user.role);
+    console.log('[DEBUG] Stored password hash:', user.password);
+    console.log('[DEBUG] Input password hash:', hashPassword(password));
     if (user.password !== hashPassword(password)) return res.json({ success: false, error: 'Incorrect password' });
     // Decrypt photo and fullName if present
     if (user.photo) user.photo = decryptPhoto(user.photo);
     if (user.fullName) user.fullName = decryptFullName(user.fullName);
     // Set onboarding_completed to 'false' if not set (for backward compatibility)
     if (!user.onboarding_completed) user.onboarding_completed = 'false';
+    console.log('[DEBUG] Login successful for user:', user.username, 'Role:', user.role);
     res.json({ success: true, user: { ...user, password: undefined } });
   });
 });
