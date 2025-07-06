@@ -1,47 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, LogOut, User, CheckCircle, Flame, Dumbbell, Footprints, Apple, Soup, Utensils, HeartPulse, ClipboardList, ChevronDown, ChevronUp, ShoppingCart, AlertTriangle, MessageCircle, X, TrendingUp } from 'lucide-react';
-import { useUser } from '../context/UserContext';
+import { User, CheckCircle, Dumbbell, Footprints, Activity, Target, Info, Users, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 import WorkoutCard from './WorkoutCard';
 import Header from './Header';
 import SwipeableWorkoutCards from './SwipeableWorkoutCards';
-import PersonalizedInsights from './PersonalizedInsights';
-import AdaptiveRecommendations from './AdaptiveRecommendations';
-
-const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const todayIdx = new Date().getDay();
-const todayDate = new Date().getDate();
-
-// Mock data for all expert domains
-const mockData = Array.from({ length: 7 }).map((_, i) => ({
-  date: todayDate + i - todayIdx,
-  meals: [
-    { type: 'Breakfast', name: 'Oatmeal & Berries', calories: 320, protein: 10, carbs: 55, fat: 6, done: false, expertNote: 'Add chia seeds for omega-3.' },
-    { type: 'Lunch', name: 'Grilled Chicken Salad', calories: 420, protein: 35, carbs: 30, fat: 12, done: false, expertNote: '' },
-    { type: 'Dinner', name: 'Salmon & Quinoa', calories: 500, protein: 38, carbs: 40, fat: 18, done: false, expertNote: 'Great for recovery.' },
-    { type: 'Snacks', name: 'Greek Yogurt & Nuts', calories: 180, protein: 12, carbs: 15, fat: 7, done: false, expertNote: '' },
-  ],
-  workouts: [
-    { name: 'Push-ups', sets: 3, reps: 15, muscle_group: 'Chest,Triceps,Shoulders', done: false, expertNote: 'Keep elbows close.' },
-    { name: 'Squats', sets: 3, reps: 20, muscle_group: 'Quads,Glutes,Hamstrings', done: false, expertNote: '' },
-    { name: 'Plank', sets: 3, reps: '1 min', muscle_group: 'Core', done: false, expertNote: 'Engage your core.' },
-  ],
-  physio: [
-    { name: 'Shoulder Mobility', reps: 10, done: false, expertNote: 'Move slowly.' },
-    { name: 'Hamstring Stretch', reps: 10, done: false, expertNote: '' },
-  ],
-  comments: [
-    { expert: 'Nutritionist', text: 'Increase protein at breakfast.', priority: false },
-    { expert: 'Physio', text: 'Focus on hamstring flexibility.', priority: true },
-  ],
-}));
-
-const mealIcons: Record<string, JSX.Element> = {
-  Breakfast: <Apple className="w-6 h-6" />,
-  Lunch: <Soup className="w-6 h-6" />,
-  Dinner: <Utensils className="w-6 h-6" />,
-  Snacks: <Apple className="w-6 h-6" />,
-};
 
 // Utility to normalize phone numbers (strip +91 and non-digits)
 function normalizePhone(phone: string) {
@@ -59,23 +22,16 @@ function getDisplayName(user: any) {
 }
 
 const TriExpertDashboard: React.FC = () => {
-  const [selectedDay, setSelectedDay] = useState(todayIdx);
-  const [showComments, setShowComments] = useState(false);
-  const dayData = mockData[selectedDay];
-  const totalCalories = dayData.meals.reduce((a, m) => a + m.calories, 0);
-  const calorieGoal = 1800;
-  const [plan, setPlan] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [lastModified, setLastModified] = useState<string | null>(null);
   const { user, logout } = useUser(); // user is the expert
   const navigate = useNavigate();
   const [workoutFilter, setWorkoutFilter] = useState({ muscle: '', goal: '', level: '' });
   const [workoutOptions, setWorkoutOptions] = useState<any[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [assignedUsers, setAssignedUsers] = useState<any[]>([]);
   const [userWorkouts, setUserWorkouts] = useState<{[userId: string]: any[]}>({});
-  const [showPersonalizedInsights, setShowPersonalizedInsights] = useState(false);
-  const [selectedUserForInsights, setSelectedUserForInsights] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedWorkouts, setSelectedWorkouts] = useState<Set<number>>(new Set());
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   console.log('User context in TriExpertDashboard:', user?.role, user?.phone);
   
@@ -91,45 +47,6 @@ const TriExpertDashboard: React.FC = () => {
       navigate('/');
     }
   }, [user, navigate]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    const fetchPlan = async () => {
-      if (!user?.phone) return;
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/plan?phone=${user.phone}`);
-        const data = await res.json();
-        if (data.plan) {
-          setPlan(data.plan);
-          setLastModified(data.last_modified_at);
-        }
-      } catch {}
-      setLoading(false);
-    };
-    fetchPlan();
-    interval = setInterval(async () => {
-      if (!user?.phone) return;
-      try {
-        const res = await fetch(`/api/plan?phone=${user.phone}`);
-        const data = await res.json();
-        if (data.last_modified_at !== lastModified) {
-          setPlan(data.plan);
-          setLastModified(data.last_modified_at);
-        }
-      } catch {}
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [user?.phone, lastModified]);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const res = await fetch('/api/admin/users');
-      const all = await res.json();
-      setAllUsers(all.filter((u: any) => u.role === 'user'));
-    };
-    fetchUsers();
-  }, []);
 
   useEffect(() => {
     if (!user?.phone) {
@@ -156,10 +73,63 @@ const TriExpertDashboard: React.FC = () => {
     });
   }, [assignedUsers]);
 
+  const handleUserSelect = (user: any) => {
+    setSelectedUser(user);
+    setSelectedWorkouts(new Set());
+    fetchUserWorkouts(user.phone);
+  };
+
   const fetchUserWorkouts = async (userId: string) => {
     const res = await fetch(`/api/trainer/user-workouts?user_id=${encodeURIComponent(userId)}`);
     const data = await res.json();
     setUserWorkouts(prev => ({ ...prev, [userId]: data.workouts || [] }));
+  };
+
+  const handleWorkoutToggle = (workoutId: number) => {
+    setSelectedWorkouts(prev => {
+      const next = new Set(prev);
+      if (next.has(workoutId)) {
+        next.delete(workoutId);
+      } else {
+        next.add(workoutId);
+      }
+      return next;
+    });
+  };
+
+  const handleAssignWorkoutsToUser = async () => {
+    if (!selectedUser || selectedWorkouts.size === 0 || !user?.phone) return;
+    
+    setLoading(true);
+    try {
+      const normalizedPhone = normalizePhone(user.phone);
+      const response = await fetch('/api/trainer/assign-workout-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          user_ids: [selectedUser.phone], 
+          workout_id: Array.from(selectedWorkouts), 
+          assigned_by: normalizedPhone 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to assign workouts');
+      }
+      
+      setSuccessMessage(`Successfully assigned ${selectedWorkouts.size} workout(s) to ${selectedUser.username || selectedUser.fullName || 'user'}`);
+      fetchUserWorkouts(selectedUser.phone);
+      setSelectedWorkouts(new Set());
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error('Error assigning workouts:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAssignWorkout = async (workoutId: number, userIds: string[]) => {
@@ -187,16 +157,6 @@ const TriExpertDashboard: React.FC = () => {
     }
   };
 
-  const updatePlan = async (newPlan: any[], section: string, note: string) => {
-    if (!user?.phone) return;
-    setPlan(newPlan);
-    await fetch('/api/plan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: user.phone, plan: newPlan, expert: user.role, section, note }),
-    });
-  };
-
   // Filtered workout options
   const filteredWorkoutOptions: any[] = workoutOptions.filter((opt: any) =>
     (!workoutFilter.muscle || (opt.muscle_group && opt.muscle_group.includes(workoutFilter.muscle))) &&
@@ -209,167 +169,344 @@ const TriExpertDashboard: React.FC = () => {
   const goals = Array.from(new Set(workoutOptions.flatMap((opt: any) => (opt.goal ? opt.goal.split(',') : []))));
   const levels = Array.from(new Set(workoutOptions.map((opt: any) => opt.level)));
 
-  const handleAssign = (section: string, index: number, value: string) => {
-    // Implementation of handleAssign function
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 text-white font-[Inter,sans-serif] relative">
       {/* Use the common Header component */}
       <Header />
 
       {/* Main Content Container with extra top padding for header */}
-      <main className="pt-44 pb-16 px-4 flex flex-col items-center min-h-screen">
-        <div className="w-full max-w-lg mx-auto space-y-12">
-          {/* Weekly Calendar */}
-          <div className="flex justify-center gap-2 mb-2">
-            {weekDays.map((d, i) => (
-              <button
-                key={d}
-                className={`flex flex-col items-center w-10 h-14 rounded-2xl font-bold transition-all shadow-md ${i === selectedDay ? 'bg-blue-500 text-white scale-110' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
-                onClick={() => setSelectedDay(i)}
-              >
-                <span className="mt-2 text-lg">{d}</span>
-                <span className="mt-1 text-base font-bold">{mockData[i].date}</span>
-              </button>
-            ))}
-          </div>
+      <main className="pt-24 pb-16 px-4 flex flex-col items-center min-h-screen">
+        <div className="w-full max-w-7xl mx-auto space-y-8">
+          <h1 className="text-3xl font-bold text-white text-center mb-8">Trainer Dashboard</h1>
 
-          {/* Assigned Users */}
-          <div className="w-full max-w-4xl mx-auto mt-16">
-            <h2 className="text-2xl font-bold mb-4 text-white">Assigned Users</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {assignedUsers.length === 0 ? (
-                <div className="col-span-full text-center text-white/70">No users assigned to you yet.</div>
-              ) : (
-                assignedUsers.map((user: any) => {
-                  const displayName = getDisplayName(user);
-                  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase();
-                  return (
-                    <button
-                      key={user.phone}
-                      className="bg-gradient-to-br from-blue-800 to-blue-600 rounded-2xl shadow-lg p-6 flex flex-col items-center hover:scale-105 transition-transform border border-white/10 group"
-                      onClick={() => navigate(`/trainer/user/${encodeURIComponent(user.phone)}`)}
-                    >
-                      <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-2xl font-bold text-blue-700 mb-3 border-4 border-blue-400">
-                        {user.photo ? (
-                          <img src={user.photo} alt={displayName} className="w-full h-full object-cover rounded-full" />
+          {/* Success Message */}
+          {successMessage && (
+            <div className="fixed top-24 right-4 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg animate-fade-in z-50">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                <span>{successMessage}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Assigned Users */}
+            <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
+              <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+                <Users className="w-6 h-6 text-blue-400" />
+                Assigned Users
+              </h2>
+
+              <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                {assignedUsers.length === 0 ? (
+                  <div className="text-center py-8 text-white/70">
+                    <Users className="w-16 h-16 mx-auto mb-4 text-white/30" />
+                    <p>No users assigned to you yet.</p>
+                    <p className="text-sm text-white/50 mt-2">Contact admin to get users assigned.</p>
+                  </div>
+                ) : (
+                  assignedUsers.map((assignedUser: any) => {
+                    const displayName = getDisplayName(assignedUser);
+                    const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase();
+                    const isSelected = selectedUser?.phone === assignedUser.phone;
+                    
+                    return (
+                      <button
+                        key={assignedUser.phone}
+                        className={`w-full text-left p-4 rounded-xl border transition-all ${
+                          isSelected 
+                            ? 'bg-blue-600/30 border-blue-500 shadow-lg' 
+                            : 'bg-white/5 border-white/10 hover:bg-white/10'
+                        }`}
+                        onClick={() => handleUserSelect(assignedUser)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-xl font-bold text-blue-700 border-2 border-blue-400">
+                            {assignedUser.photo ? (
+                              <img src={assignedUser.photo} alt={displayName} className="w-full h-full object-cover rounded-full" />
+                            ) : (
+                              initials
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-white truncate">{displayName}</div>
+                            <div className="text-sm text-white/70 truncate">{assignedUser.phone}</div>
+                          </div>
+                          {isSelected && (
+                            <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Middle Column: User Details */}
+            <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
+              <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+                <User className="w-6 h-6 text-green-400" />
+                User Details
+              </h2>
+
+              {selectedUser ? (
+                <div className="space-y-6">
+                  {/* User Profile */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-2xl font-bold text-blue-700 border-4 border-blue-400">
+                      {selectedUser.photo ? (
+                        <img src={selectedUser.photo} alt={getDisplayName(selectedUser)} className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        getDisplayName(selectedUser).split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">{getDisplayName(selectedUser)}</h3>
+                      <p className="text-white/70">{selectedUser.phone}</p>
+                      <p className="text-white/50 text-sm">{selectedUser.email || 'No email'}</p>
+                    </div>
+                  </div>
+                  
+                  {/* User Measurements */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/10 rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Activity className="w-4 h-4 text-blue-400" />
+                        <span className="text-white/70 text-sm">Height</span>
+                      </div>
+                      <div className="text-xl font-bold text-white">{selectedUser.height || 'N/A'} cm</div>
+                    </div>
+                    
+                    <div className="bg-white/10 rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Activity className="w-4 h-4 text-green-400" />
+                        <span className="text-white/70 text-sm">Weight</span>
+                      </div>
+                      <div className="text-xl font-bold text-white">{selectedUser.weight || 'N/A'} kg</div>
+                    </div>
+                    
+                    <div className="bg-white/10 rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Target className="w-4 h-4 text-purple-400" />
+                        <span className="text-white/70 text-sm">Fitness Goal</span>
+                      </div>
+                      <div className="text-lg font-bold text-white capitalize">{selectedUser.fitnessGoal?.replace('_', ' ') || 'N/A'}</div>
+                    </div>
+                    
+                    <div className="bg-white/10 rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Activity className="w-4 h-4 text-yellow-400" />
+                        <span className="text-white/70 text-sm">Activity Level</span>
+                      </div>
+                      <div className="text-lg font-bold text-white capitalize">{selectedUser.activityLevel?.replace('_', ' ') || 'N/A'}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Additional Details */}
+                  <div className="space-y-3">
+                    <div className="bg-white/10 rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Info className="w-4 h-4 text-blue-400" />
+                        <span className="text-white/70 text-sm">Medical Conditions</span>
+                      </div>
+                      <div className="text-white">{selectedUser.medicalConditions || 'None reported'}</div>
+                    </div>
+                    
+                    <div className="bg-white/10 rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-4 h-4 text-green-400" />
+                        <span className="text-white/70 text-sm">Assigned Workouts</span>
+                      </div>
+                      <div className="text-white">
+                        {userWorkouts[selectedUser.phone]?.length > 0 ? (
+                          <div className="text-lg font-bold">{userWorkouts[selectedUser.phone].length} workouts assigned</div>
                         ) : (
-                          initials
+                          <div className="text-white/50">No workouts assigned yet</div>
                         )}
                       </div>
-                      <div className="text-lg font-semibold text-white mb-1 truncate w-full text-center">{displayName}</div>
-                      <div className="text-sm text-white/70 mb-1">{user.phone}</div>
-                      <div className="text-xs text-white/50">{user.email || 'No email'}</div>
-                    </button>
-                  );
-                })
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-white/50">
+                  <User className="w-16 h-16 mb-4" />
+                  <p>Select a user to view details</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Workout Assignment */}
+            <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
+              <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+                <Dumbbell className="w-6 h-6 text-purple-400" />
+                Assign Workouts
+              </h2>
+
+              {selectedUser ? (
+                <div className="space-y-6">
+                  {/* Workout Filter */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm text-white/70 mb-1">Muscle Group</label>
+                      <select 
+                        value={workoutFilter.muscle}
+                        onChange={e => setWorkoutFilter({...workoutFilter, muscle: e.target.value})}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white"
+                      >
+                        <option value="">All</option>
+                        {muscleGroups.map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/70 mb-1">Goal</label>
+                      <select 
+                        value={workoutFilter.goal}
+                        onChange={e => setWorkoutFilter({...workoutFilter, goal: e.target.value})}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white"
+                      >
+                        <option value="">All</option>
+                        {goals.map(g => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-white/70 mb-1">Level</label>
+                      <select 
+                        value={workoutFilter.level}
+                        onChange={e => setWorkoutFilter({...workoutFilter, level: e.target.value})}
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white"
+                      >
+                        <option value="">All</option>
+                        {levels.map(l => (
+                          <option key={l} value={l}>{l}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Workout Selection */}
+                  <div className="max-h-[calc(100vh-400px)] overflow-y-auto pr-2 space-y-3">
+                    {filteredWorkoutOptions.length > 0 ? (
+                      filteredWorkoutOptions.map(workout => (
+                        <div 
+                          key={workout.id}
+                          className={`border rounded-xl transition-all cursor-pointer ${
+                            selectedWorkouts.has(workout.id) 
+                              ? 'border-blue-500 bg-blue-500/20 shadow-lg' 
+                              : 'border-white/10 bg-white/5 hover:bg-white/10'
+                          }`}
+                          onClick={() => handleWorkoutToggle(workout.id)}
+                        >
+                          <div className="p-4 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                              {workout.name.toLowerCase().includes('push') ? (
+                                <Dumbbell className="w-5 h-5 text-white" />
+                              ) : workout.name.toLowerCase().includes('squat') ? (
+                                <Footprints className="w-5 h-5 text-white" />
+                              ) : (
+                                <Activity className="w-5 h-5 text-white" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-white">{workout.name}</div>
+                              <div className="text-sm text-white/70 truncate">{workout.muscle_group}</div>
+                            </div>
+                            <div className="text-sm text-white/70">
+                              {workout.sets} sets × {workout.reps} reps
+                            </div>
+                            {selectedWorkouts.has(workout.id) && (
+                              <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-white/50">
+                        <Dumbbell className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                        <p>No workouts match your filter criteria</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Assign Button */}
+                  <button
+                    onClick={handleAssignWorkoutsToUser}
+                    disabled={selectedWorkouts.size === 0 || loading}
+                    className={`w-full py-4 rounded-xl font-bold text-lg transition-colors ${
+                      selectedWorkouts.size === 0 || loading
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                    }`}
+                  >
+                    {loading 
+                      ? 'Assigning...' 
+                      : `Assign ${selectedWorkouts.size} Workout${selectedWorkouts.size !== 1 ? 's' : ''}`}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-white/50">
+                  <Dumbbell className="w-16 h-16 mb-4" />
+                  <p>Select a user to assign workouts</p>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Meal Plan Card */}
-          <div className="bg-gray-900/80 backdrop-blur-lg rounded-4xl shadow-3xl border border-white/20 p-10 mb-12">
-            <section>
-              <h3 className="text-xl font-bold mb-4">Meal Plan</h3>
-              {dayData.meals.map((meal, i) => (
-                <div key={i} className="flex items-center gap-4 py-3 border-b border-white/10 last:border-b-0">
-                  <div>{mealIcons[meal.type] || <Apple className="w-6 h-6" />}</div>
-                  <div className="flex-1">
-                    <div className="font-bold text-lg text-white flex items-center gap-2">
-                      {meal.type}
-                      {meal.expertNote && (
-                        <span title={meal.expertNote}><MessageCircle className="w-4 h-4 text-blue-400" /></span>
-                      )}
+          {/* Current Assigned Workouts */}
+          {selectedUser && userWorkouts[selectedUser.phone]?.length > 0 && (
+            <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
+              <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+                <CheckCircle className="w-6 h-6 text-green-400" />
+                Currently Assigned Workouts
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {userWorkouts[selectedUser.phone].map((workout: any) => (
+                  <div key={workout.id} className="bg-white/10 rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center">
+                        {workout.name.toLowerCase().includes('push') ? (
+                          <Dumbbell className="w-5 h-5 text-white" />
+                        ) : workout.name.toLowerCase().includes('squat') ? (
+                          <Footprints className="w-5 h-5 text-white" />
+                        ) : (
+                          <Activity className="w-5 h-5 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{workout.name}</div>
+                        <div className="text-sm text-white/70">{workout.muscle_group}</div>
+                      </div>
                     </div>
-                    <div className="text-white/60 text-sm">{meal.name}</div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="font-bold text-white text-base">{meal.calories}</div>
-                    <div className="text-xs text-white/50 flex gap-2">
-                      <span>{meal.protein}g</span>
-                      <span>{meal.carbs}g</span>
-                      <span>{meal.fat}g</span>
+                    <div className="text-sm text-white/70 mt-2">
+                      <div>Sets: {workout.sets} • Reps: {workout.reps}</div>
+                      <div>Level: {workout.level || 'Intermediate'}</div>
+                      <div className="text-xs text-white/50 mt-1">
+                        Assigned: {new Date(workout.assigned_at).toLocaleDateString()}
+                      </div>
                     </div>
-                    <button className={`mt-1 ${meal.done ? 'text-green-400' : 'text-white/40'}`}><CheckCircle className="w-5 h-5" /></button>
-                  </div>
-                </div>
-              ))}
-              {/* Calories Progress Bar */}
-              <div className="mt-6">
-                <div className="flex justify-between items-center text-white/80 text-lg font-bold mb-1">
-                  <span>{totalCalories.toLocaleString()} / {calorieGoal} CALORIES</span>
-                </div>
-                <div className="w-full h-2 bg-white/20 rounded-full">
-                  <div
-                    className="h-2 rounded-full bg-cyan-400"
-                    style={{ width: `${Math.min(100, (totalCalories / calorieGoal) * 100)}%` }}
-                  />
-                </div>
-              </div>
-              <button className="mt-10 w-full flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-2xl rounded-2xl py-5 shadow-xl border border-white/30 transition-all">
-                <ShoppingCart className="w-7 h-7" />
-                GROCERY LIST
-              </button>
-            </section>
-          </div>
-
-          {/* Workout Plan Card */}
-          <div className="bg-gray-900/80 backdrop-blur-lg rounded-4xl shadow-3xl border border-white/20 p-10 mb-12">
-            <section>
-              <h3 className="text-xl font-bold mb-4">Workout Plan</h3>
-              <SwipeableWorkoutCards 
-                workouts={dayData.workouts} 
-                assignedUsers={assignedUsers}
-                onAssignWorkout={handleAssignWorkout}
-              />
-            </section>
-          </div>
-
-          {/* Physio Plan Card */}
-          <div className="bg-gray-900/80 backdrop-blur-lg rounded-4xl shadow-3xl border border-white/20 p-10 mb-12">
-            <section>
-              <h3 className="text-xl font-bold mb-4">Physio Plan</h3>
-              {dayData.physio.map((p, i) => (
-                <div key={i} className="flex items-center gap-4 py-3 border-b border-white/10 last:border-b-0 bg-white/10 rounded-xl px-4 mb-3 shadow">
-                  <HeartPulse className="w-6 h-6 text-pink-400" />
-                  <div className="flex-1">
-                    <div className="font-bold text-lg text-white flex items-center gap-2">
-                      {p.name}
-                      {p.expertNote && (
-                        <span title={p.expertNote}><MessageCircle className="w-4 h-4 text-blue-400" /></span>
-                      )}
-                    </div>
-                    <div className="text-white/60 text-sm">{p.reps} reps</div>
-                  </div>
-                  <button className={`ml-2 ${p.done ? 'text-green-400' : 'text-white/40'}`}><CheckCircle className="w-5 h-5" /></button>
-                </div>
-              ))}
-            </section>
-          </div>
-
-          {/* Expert Comments Card */}
-          <div className="bg-white/20 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
-            <button
-              className="w-full flex items-center justify-between bg-white/10 rounded-xl px-6 py-4 text-white font-bold text-lg shadow-lg border border-white/20 mb-2"
-              onClick={() => setShowComments((v) => !v)}
-            >
-              <span>Expert Comments</span>
-              {showComments ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
-            </button>
-            {showComments && (
-              <div className="bg-white/10 rounded-xl px-6 py-4">
-                {dayData.comments.map((c, i) => (
-                  <div key={i} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-b-0">
-                    <span className="font-bold text-white/80">{c.expert}</span>
-                    <span className="text-white/70 flex-1">{c.text}</span>
-                    {c.priority && (
-                      <span title="Priority"><AlertTriangle className="w-5 h-5 text-yellow-400" /></span>
-                    )}
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Workout Swiper for Quick Assignment */}
+          <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
+            <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+              <Dumbbell className="w-6 h-6 text-blue-400" />
+              Quick Workout Assignment
+            </h2>
+            
+            <SwipeableWorkoutCards 
+              workouts={workoutOptions.slice(0, 5)} 
+              assignedUsers={assignedUsers}
+              onAssignWorkout={handleAssignWorkout}
+            />
           </div>
         </div>
       </main>

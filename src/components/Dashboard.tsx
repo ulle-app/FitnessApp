@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import Header from './Header';
 import { useUser } from '../context/UserContext';
-import { 
-  Edit2, CheckCircle, ChevronRight, X, Camera, 
-  Activity, Target, TrendingUp, Calendar, Award,
-  Dumbbell, Heart, Zap, Users, BookOpen, Settings
+import {
+  Edit2, CheckCircle, ChevronRight, X, Camera,
+  Activity, Target, TrendingUp, Calendar, Award, 
+  Dumbbell, Heart, Zap, Users, BookOpen, Settings,
+  Clock, Info
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -14,6 +15,10 @@ const Dashboard: React.FC = () => {
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // State for assigned workouts
+  const [assignedWorkouts, setAssignedWorkouts] = useState<any[]>([]);
+  const [loadingWorkouts, setLoadingWorkouts] = useState(true);
 
   // Mock data for dashboard widgets
   const stats = [
@@ -29,6 +34,23 @@ const Dashboard: React.FC = () => {
     { label: 'Track Weight', icon: TrendingUp, color: 'bg-green-500' },
     { label: 'Join Community', icon: Users, color: 'bg-purple-500' },
   ];
+
+  // Fetch assigned workouts
+  React.useEffect(() => {
+    if (user?.phone) {
+      setLoadingWorkouts(true);
+      fetch(`/api/trainer/user-workouts?user_id=${encodeURIComponent(user.phone)}`)
+        .then(res => res.json())
+        .then(data => {
+          setAssignedWorkouts(data.workouts || []);
+          setLoadingWorkouts(false);
+        })
+        .catch(err => {
+          console.error('Error fetching assigned workouts:', err);
+          setLoadingWorkouts(false);
+        });
+    }
+  }, [user?.phone]);
 
   const recentActivities = [
     { type: 'workout', title: 'Upper Body Strength', duration: '45 min', time: '2 hours ago' },
@@ -182,7 +204,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Recent Activities */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                   Recent Activities
                 </h2>
@@ -205,6 +227,63 @@ const Dashboard: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+              
+              {/* Assigned Workouts */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                  <Dumbbell className="w-6 h-6 text-blue-600" />
+                  Assigned Workouts
+                </h2>
+                
+                {loadingWorkouts ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : assignedWorkouts.length > 0 ? (
+                  <div className="space-y-4">
+                    {assignedWorkouts.map((workout, index) => (
+                      <div key={index} className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <div className="flex items-start gap-3">
+                          <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white">
+                            <Dumbbell className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                              {workout.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              {workout.muscle_group}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                              <div className="flex items-center gap-1">
+                                <Activity className="w-4 h-4" />
+                                <span>{workout.sets} sets × {workout.reps} reps</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Target className="w-4 h-4" />
+                                <span>{workout.level || 'Intermediate'}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 mt-2 text-xs text-gray-400 dark:text-gray-500">
+                              <Clock className="w-3 h-3" />
+                              <span>Assigned {new Date(workout.assigned_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <button className="bg-blue-100 dark:bg-blue-800 p-2 rounded-full text-blue-600 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors">
+                            <Info className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Dumbbell className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                    <p className="text-gray-500 dark:text-gray-400">No workouts assigned yet</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Your trainer will assign workouts soon</p>
+                  </div>
+                )}
               </div>
             </div>
 
