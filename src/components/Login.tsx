@@ -120,11 +120,13 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
       const data = await res.json();
       
       if (data.success) {
+        // For demo purposes, show the OTP in the UI
+        const demoOtp = data.otp || '123456';
         setForgotPassword({
           ...forgotPassword, 
           step: 'otp', 
           loading: false,
-          message: 'OTP sent to your phone'
+          message: `OTP sent to your phone (Demo: ${demoOtp})`
         });
       } else {
         setForgotPassword({
@@ -167,7 +169,7 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
           ...forgotPassword, 
           step: 'password', 
           loading: false,
-          message: 'OTP verified successfully'
+          message: 'OTP verified successfully! Set your new password.'
         });
       } else {
         setForgotPassword({
@@ -426,6 +428,8 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
               <div className="space-y-4">
                 <p className="text-gray-300 mb-4 text-center">
                   Enter the 6-digit OTP sent to your phone number
+                  <br/>
+                  <span className="text-xs text-yellow-400">(For demo: Check the message below)</span>
                 </p>
                 
                 <div className="flex items-center border-b border-gray-600">
