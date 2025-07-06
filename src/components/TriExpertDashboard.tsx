@@ -173,15 +173,10 @@ const TriExpertDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 text-white font-[Inter,sans-serif] relative">
-      {/* Use the common Header component */}
       <Header />
-
-      {/* Main Content Container with extra top padding for header */}
       <main className="pt-24 pb-16 px-4 flex flex-col items-center min-h-screen">
         <div className="w-full max-w-7xl mx-auto space-y-8">
           <h1 className="text-3xl font-bold text-white text-center mb-8">Trainer Dashboard</h1>
-
-          {/* Success Message */}
           {successMessage && (
             <div className="fixed top-24 right-4 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg animate-fade-in z-50">
               <div className="flex items-center gap-2">
@@ -190,7 +185,6 @@ const TriExpertDashboard: React.FC = () => {
               </div>
             </div>
           )}
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Assigned Users */}
             <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
@@ -198,7 +192,6 @@ const TriExpertDashboard: React.FC = () => {
                 <Users className="w-6 h-6 text-blue-400" />
                 Assigned Users
               </h2>
-
               <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
                 {assignedUsers.length === 0 ? (
                   <div className="text-center py-8 text-white/70">
@@ -244,7 +237,6 @@ const TriExpertDashboard: React.FC = () => {
                 )}
               </div>
             </div>
-
             {/* Middle Column: User Details */}
             <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
               <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
@@ -260,7 +252,6 @@ const TriExpertDashboard: React.FC = () => {
                   </button>
                 )}
               </h2>
-
               {selectedUser ? (
                 <div className="space-y-6">
                   {/* User Profile */}
@@ -346,14 +337,12 @@ const TriExpertDashboard: React.FC = () => {
                 </div>
               )}
             </div>
-
             {/* Right Column: Workout Assignment */}
             <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
               <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
                 <Dumbbell className="w-6 h-6 text-purple-400" />
                 Assign Workouts
               </h2>
-
               {selectedUser ? (
                 <div className="space-y-6">
                   {/* Workout Filter */}
@@ -398,7 +387,6 @@ const TriExpertDashboard: React.FC = () => {
                       </select>
                     </div>
                   </div>
-
                   {/* Workout Selection */}
                   <div className="max-h-[calc(100vh-400px)] overflow-y-auto pr-2 space-y-3">
                     {filteredWorkoutOptions.length > 0 ? (
@@ -442,7 +430,6 @@ const TriExpertDashboard: React.FC = () => {
                       </div>
                     )}
                   </div>
-
                   {/* Assign Button */}
                   <button
                     onClick={handleAssignWorkoutsToUser}
@@ -456,18 +443,15 @@ const TriExpertDashboard: React.FC = () => {
                     {loading 
                       ? 'Assigning...' 
                       : `Assign ${selectedWorkouts.size} Workout${selectedWorkouts.size !== 1 ? 's' : ''}`}
-                className="absolute top-4 right-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-white/50">
                   <Dumbbell className="w-16 h-16 mb-4" />
                   <p>Select a user to assign workouts</p>
-                </div>
-                onCancel={() => setShowBodyMeasurements(false)}
               )}
             </div>
           </div>
-
           {/* Current Assigned Workouts */}
           {selectedUser && userWorkouts[selectedUser.phone]?.length > 0 && (
             <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
@@ -506,7 +490,6 @@ const TriExpertDashboard: React.FC = () => {
               </div>
             </div>
           )}
-
           {/* Workout Swiper for Quick Assignment */}
           <div className="bg-gray-900/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-6">
             <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
@@ -516,6 +499,7 @@ const TriExpertDashboard: React.FC = () => {
             
             <SwipeableWorkoutCards 
               workouts={workoutOptions.slice(0, 5)} 
+                  onCancel={() => setShowBodyMeasurements(false)}
               assignedUsers={assignedUsers}
               onAssignWorkout={handleAssignWorkout}
             />
