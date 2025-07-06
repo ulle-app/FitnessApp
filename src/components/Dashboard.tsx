@@ -33,8 +33,6 @@ const Dashboard: React.FC = () => {
     waterIntake: [1.8, 2.2, 1.9, 2.5, 2.1, 2.3, 2.0],
     sleepHours: [6.5, 7.2, 6.8, 7.5, 7.0, 6.9, 7.3]
   });
-  const [assignedWorkouts, setAssignedWorkouts] = useState<any[]>([]);
-  const [loadingWorkouts, setLoadingWorkouts] = useState(true);
 
   // Calculate BMI
   const calculateBMI = () => {
