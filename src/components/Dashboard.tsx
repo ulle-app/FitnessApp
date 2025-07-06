@@ -8,7 +8,7 @@ import {
   Clock, ArrowRight, Calendar,
   TrendingUp, TrendingDown, Target,
   BarChart3, Flame, Utensils, 
-  Droplet, Moon, Scale, Ruler
+  Droplet, Moon, Ruler
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
