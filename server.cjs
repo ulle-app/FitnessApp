@@ -48,6 +48,26 @@ db.run(`CREATE TABLE IF NOT EXISTS profiles (
   onboarding_completed TEXT DEFAULT 'false'
 )`);
 
+// --- Body Measurements Table ---
+db.run(`CREATE TABLE IF NOT EXISTS body_measurements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  measured_by TEXT NOT NULL,
+  measurement_date TEXT NOT NULL,
+  weight REAL,
+  body_fat REAL,
+  visceral_fat INTEGER,
+  skeletal_muscle REAL,
+  resting_metabolism INTEGER,
+  body_age INTEGER,
+  bmi REAL,
+  subcutaneous_fat REAL,
+  waist_circumference REAL,
+  hip_circumference REAL,
+  waist_to_hip_ratio REAL,
+  notes TEXT
+)`);
+
 // --- Diet Plan Table ---
 db.run(`CREATE TABLE IF NOT EXISTS diet_plans (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -947,6 +967,94 @@ app.get('/api/trainer/user-workouts', (req, res) => {
       res.json({ workouts: rows });
     }
   );
+});
+
+// --- API: Body Measurements ---
+// Get all measurements for a user
+app.get('/api/measurements/:userId', (req, res) => {
+  const userId = req.params.userId;
+  if (!userId) return res.status(400).json({ error: 'User ID is required' });
+  
+  db.all('SELECT * FROM body_measurements WHERE user_id = ? ORDER BY measurement_date DESC', [userId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ measurements: rows });
+  });
+});
+
+// Add a new measurement
+app.post('/api/measurements', (req, res) => {
+  const { 
+    user_id, measured_by, weight, body_fat, visceral_fat, 
+    skeletal_muscle, resting_metabolism, body_age, bmi,
+    subcutaneous_fat, waist_circumference, hip_circumference,
+    waist_to_hip_ratio, notes 
+  } = req.body;
+  
+  if (!user_id || !measured_by) {
+    return res.status(400).json({ error: 'User ID and measured by are required' });
+  }
+  
+  const measurement_date = req.body.measurement_date || new Date().toISOString();
+  
+  db.run(
+    `INSERT INTO body_measurements (
+      user_id, measured_by, measurement_date, weight, body_fat, 
+      visceral_fat, skeletal_muscle, resting_metabolism, body_age, 
+      bmi, subcutaneous_fat, waist_circumference, hip_circumference,
+      waist_to_hip_ratio, notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      user_id, measured_by, measurement_date, weight, body_fat, 
+      visceral_fat, skeletal_muscle, resting_metabolism, body_age, 
+      bmi, subcutaneous_fat, waist_circumference, hip_circumference,
+      waist_to_hip_ratio, notes
+    ],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+// Update a measurement
+app.put('/api/measurements/:id', (req, res) => {
+  const measurementId = req.params.id;
+  const { 
+    weight, body_fat, visceral_fat, skeletal_muscle, 
+    resting_metabolism, body_age, bmi, subcutaneous_fat,
+    waist_circumference, hip_circumference, waist_to_hip_ratio, notes 
+  } = req.body;
+  
+  db.run(
+    `UPDATE body_measurements SET 
+      weight = ?, body_fat = ?, visceral_fat = ?, skeletal_muscle = ?,
+      resting_metabolism = ?, body_age = ?, bmi = ?, subcutaneous_fat = ?,
+      waist_circumference = ?, hip_circumference = ?, waist_to_hip_ratio = ?,
+      notes = ?
+    WHERE id = ?`,
+    [
+      weight, body_fat, visceral_fat, skeletal_muscle, 
+      resting_metabolism, body_age, bmi, subcutaneous_fat,
+      waist_circumference, hip_circumference, waist_to_hip_ratio, notes,
+      measurementId
+    ],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Measurement not found' });
+      res.json({ success: true });
+    }
+  );
+});
+
+// Delete a measurement
+app.delete('/api/measurements/:id', (req, res) => {
+  const measurementId = req.params.id;
+  
+  db.run('DELETE FROM body_measurements WHERE id = ?', [measurementId], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Measurement not found' });
+    res.json({ success: true });
+  });
 });
 
 // Start server

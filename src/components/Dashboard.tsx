@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Edit2, CheckCircle, Camera, 
+  Edit2, CheckCircle, Camera, Scale,
   Activity, Award, Dumbbell, 
   Heart, Zap, Users, Info,
   Clock, ArrowRight, Calendar,
@@ -11,6 +11,8 @@ import {
   Droplet, Moon, Scale, Ruler
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+import BodyMeasurementSummary from './BodyMeasurementSummary';
 
 const Dashboard: React.FC = () => {
   const { user, setUser, logout } = useUser();
@@ -806,6 +808,11 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Body Measurements Summary */}
+            {user?.phone && (
+              <BodyMeasurementSummary userId={user.phone} />
+            )}
 
             {/* Quick Profile Edit */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">

@@ -5,6 +5,7 @@ import { useUser } from '../context/UserContext';
 import WorkoutCard from './WorkoutCard';
 import Header from './Header';
 import SwipeableWorkoutCards from './SwipeableWorkoutCards';
+import BodyMeasurementHistory from './BodyMeasurementHistory';
 
 // Utility to normalize phone numbers (strip +91 and non-digits)
 function normalizePhone(phone: string) {
@@ -31,6 +32,7 @@ const TriExpertDashboard: React.FC = () => {
   const [userWorkouts, setUserWorkouts] = useState<{[userId: string]: any[]}>({});
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedWorkouts, setSelectedWorkouts] = useState<Set<number>>(new Set());
+  const [showBodyMeasurements, setShowBodyMeasurements] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   console.log('User context in TriExpertDashboard:', user?.role, user?.phone);
@@ -248,6 +250,15 @@ const TriExpertDashboard: React.FC = () => {
               <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
                 <User className="w-6 h-6 text-green-400" />
                 User Details
+                {selectedUser && (
+                  <button
+                    onClick={() => setShowBodyMeasurements(true)}
+                    className="ml-auto text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <Scale className="w-4 h-4" />
+                    Body Measurements
+                  </button>
+                )}
               </h2>
 
               {selectedUser ? (
@@ -510,6 +521,24 @@ const TriExpertDashboard: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      {/* Body Measurements Modal */}
+      {showBodyMeasurements && selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative max-w-4xl w-full">
+            <button
+              onClick={() => setShowBodyMeasurements(false)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <BodyMeasurementHistory 
+              userId={selectedUser.phone}
+              userName={getDisplayName(selectedUser)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
