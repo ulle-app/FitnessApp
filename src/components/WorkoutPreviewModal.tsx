@@ -59,7 +59,7 @@ const WorkoutPreviewModal: React.FC<WorkoutPreviewModalProps> = ({
   }, [isOpen, workoutName]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: number;
     if (isPlaying && workoutPreview?.steps[currentStep]?.duration) {
       interval = setInterval(() => {
         setTimer(prev => {

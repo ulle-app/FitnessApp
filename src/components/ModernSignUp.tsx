@@ -38,12 +38,12 @@ const ModernSignUp: React.FC<ModernSignUpProps> = ({ onClose }) => {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
   const [timer, setTimer] = useState(30); // 30 seconds for OTP
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
   const [userId] = useState(randomId());
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [lockout, setLockout] = useState(false);
   const [lockoutTimer, setLockoutTimer] = useState(60);
-  const lockoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lockoutRef = useRef<number | null>(null);
   const [fullName, setFullName] = useState('');
 
   const checkPhoneUnique = async (phone: string) => {
