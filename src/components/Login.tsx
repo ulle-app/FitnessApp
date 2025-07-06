@@ -4,6 +4,16 @@ import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 
+interface ForgotPasswordState {
+  isOpen: boolean;
+  phone: string;
+  otp: string;
+  newPassword: string;
+  step: 'phone' | 'otp' | 'password';
+  message: string;
+  loading: boolean;
+}
+
 interface LoginProps {
   onClose?: () => void;
   prefillPhone?: string;
@@ -16,6 +26,15 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isPhone, setIsPhone] = useState(true);
+  const [forgotPassword, setForgotPassword] = useState<ForgotPasswordState>({
+    isOpen: false,
+    phone: '',
+    otp: '',
+    newPassword: '',
+    step: 'phone',
+    message: '',
+    loading: false
+  });
   const { theme } = useTheme();
   const { setUser } = useUser();
   const navigate = useNavigate();
@@ -72,6 +91,163 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
       console.error('Login error:', err);
       setError('Network error. Please try again.');
     }
+  };
+
+  const handleForgotPassword = () => {
+    setForgotPassword({
+      ...forgotPassword,
+      isOpen: true,
+      phone: isPhone ? identifier : '',
+      step: 'phone'
+    });
+  };
+
+  const handleSendOTP = async () => {
+    if (!forgotPassword.phone) {
+      setForgotPassword({...forgotPassword, message: 'Please enter your phone number'});
+      return;
+    }
+
+    setForgotPassword({...forgotPassword, loading: true, message: ''});
+    
+    try {
+      const res = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: forgotPassword.phone })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setForgotPassword({
+          ...forgotPassword, 
+          step: 'otp', 
+          loading: false,
+          message: 'OTP sent to your phone'
+        });
+      } else {
+        setForgotPassword({
+          ...forgotPassword, 
+          loading: false,
+          message: data.error || 'Failed to send OTP'
+        });
+      }
+    } catch (err) {
+      setForgotPassword({
+        ...forgotPassword, 
+        loading: false,
+        message: 'Network error. Please try again.'
+      });
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!forgotPassword.otp) {
+      setForgotPassword({...forgotPassword, message: 'Please enter the OTP'});
+      return;
+    }
+
+    setForgotPassword({...forgotPassword, loading: true, message: ''});
+    
+    try {
+      const res = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phone: forgotPassword.phone,
+          otp: forgotPassword.otp 
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setForgotPassword({
+          ...forgotPassword, 
+          step: 'password', 
+          loading: false,
+          message: 'OTP verified successfully'
+        });
+      } else {
+        setForgotPassword({
+          ...forgotPassword, 
+          loading: false,
+          message: data.error || 'Invalid OTP'
+        });
+      }
+    } catch (err) {
+      setForgotPassword({
+        ...forgotPassword, 
+        loading: false,
+        message: 'Network error. Please try again.'
+      });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!forgotPassword.newPassword) {
+      setForgotPassword({...forgotPassword, message: 'Please enter a new password'});
+      return;
+    }
+
+    if (forgotPassword.newPassword.length < 6) {
+      setForgotPassword({...forgotPassword, message: 'Password must be at least 6 characters'});
+      return;
+    }
+
+    setForgotPassword({...forgotPassword, loading: true, message: ''});
+    
+    try {
+      const res = await fetch('/api/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phone: forgotPassword.phone,
+          password: forgotPassword.newPassword,
+          otp: forgotPassword.otp
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setForgotPassword({
+          isOpen: false,
+          phone: '',
+          otp: '',
+          newPassword: '',
+          step: 'phone',
+          message: '',
+          loading: false
+        });
+        setError('Password reset successful. Please login with your new password.');
+      } else {
+        setForgotPassword({
+          ...forgotPassword, 
+          loading: false,
+          message: data.error || 'Failed to reset password'
+        });
+      }
+    } catch (err) {
+      setForgotPassword({
+        ...forgotPassword, 
+        loading: false,
+        message: 'Network error. Please try again.'
+      });
+    }
+  };
+
+  const closeForgotPassword = () => {
+    setForgotPassword({
+      isOpen: false,
+      phone: '',
+      otp: '',
+      newPassword: '',
+      step: 'phone',
+      message: '',
+      loading: false
+    });
   };
 
   return (
@@ -180,6 +356,7 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
         {/* Forgot Password */}
         <div className="text-center">
           <button
+            onClick={handleForgotPassword}
             type="button"
             className="text-gray-400 hover:text-white text-sm underline"
           >
@@ -200,6 +377,128 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
           </div>
         </div>
       </form>
+      
+      {/* Forgot Password Modal */}
+      {forgotPassword.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-md w-full relative">
+            <button
+              onClick={closeForgotPassword}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">Reset Password</h2>
+            
+            {forgotPassword.step === 'phone' && (
+              <div className="space-y-4">
+                <div className="flex items-center border-b border-gray-600">
+                  <span className="text-white text-lg font-semibold mr-2">+91</span>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={forgotPassword.phone}
+                    onChange={e => setForgotPassword({...forgotPassword, phone: e.target.value.replace(/\D/g, '')})}
+                    placeholder="Enter your phone number"
+                    className="flex-1 bg-transparent text-white placeholder-gray-400 py-3 px-2 text-lg outline-none focus:outline-none"
+                    disabled={forgotPassword.loading}
+                  />
+                </div>
+                
+                <button
+                  onClick={handleSendOTP}
+                  disabled={forgotPassword.loading || !forgotPassword.phone}
+                  className="w-full py-3 rounded-xl font-bold text-lg transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-400"
+                >
+                  {forgotPassword.loading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+                
+                {forgotPassword.message && (
+                  <div className="text-center text-yellow-400 font-medium">
+                    {forgotPassword.message}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {forgotPassword.step === 'otp' && (
+              <div className="space-y-4">
+                <p className="text-gray-300 mb-4 text-center">
+                  Enter the 6-digit OTP sent to your phone number
+                </p>
+                
+                <div className="flex items-center border-b border-gray-600">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={forgotPassword.otp}
+                    onChange={e => setForgotPassword({...forgotPassword, otp: e.target.value.replace(/\D/g, '')})}
+                    placeholder="Enter OTP"
+                    className="flex-1 bg-transparent text-white placeholder-gray-400 py-3 px-2 text-lg outline-none focus:outline-none"
+                    disabled={forgotPassword.loading}
+                  />
+                </div>
+                
+                <button
+                  onClick={handleVerifyOTP}
+                  disabled={forgotPassword.loading || forgotPassword.otp.length !== 6}
+                  className="w-full py-3 rounded-xl font-bold text-lg transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-400"
+                >
+                  {forgotPassword.loading ? 'Verifying...' : 'Verify OTP'}
+                </button>
+                
+                <button
+                  onClick={handleSendOTP}
+                  disabled={forgotPassword.loading}
+                  className="w-full text-gray-400 hover:text-white text-sm underline"
+                >
+                  Resend OTP
+                </button>
+                
+                {forgotPassword.message && (
+                  <div className="text-center text-yellow-400 font-medium">
+                    {forgotPassword.message}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {forgotPassword.step === 'password' && (
+              <div className="space-y-4">
+                <p className="text-gray-300 mb-4 text-center">
+                  Enter your new password
+                </p>
+                
+                <div className="flex items-center border-b border-gray-600">
+                  <input
+                    type="password"
+                    value={forgotPassword.newPassword}
+                    onChange={e => setForgotPassword({...forgotPassword, newPassword: e.target.value})}
+                    placeholder="New password"
+                    className="flex-1 bg-transparent text-white placeholder-gray-400 py-3 px-2 text-lg outline-none focus:outline-none"
+                    disabled={forgotPassword.loading}
+                  />
+                </div>
+                
+                <button
+                  onClick={handleResetPassword}
+                  disabled={forgotPassword.loading || forgotPassword.newPassword.length < 6}
+                  className="w-full py-3 rounded-xl font-bold text-lg transition-colors bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-400"
+                >
+                  {forgotPassword.loading ? 'Resetting...' : 'Reset Password'}
+                </button>
+                
+                {forgotPassword.message && (
+                  <div className="text-center text-yellow-400 font-medium">
+                    {forgotPassword.message}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

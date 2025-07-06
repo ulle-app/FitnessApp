@@ -22,7 +22,7 @@
    const [selectedUserForInsights, setSelectedUserForInsights] = useState<any>(null);
  
 -  console.log('User context in TriExpertDashboard:', user);
-+  console.log('User context in TrainerDashboard:', user?.role, user?.phone);
+
 +  
 +  // Redirect if not logged in or not a trainer
 +  React.useEffect(() => {
@@ -31,9 +31,7 @@
 +      return;
 +    }
 +    
-+    if (user.role !=  }
-  )
-= 'trainer') {
+    if (user.role !== 'trainer') {
 +      console.log('User is not a trainer, redirecting');
 +      navigate('/');
 +    }
