@@ -5,7 +5,7 @@ import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 
 interface LoginProps {
-  onClose: () => void;
+  onClose?: () => void;
   prefillPhone?: string;
 }
 
@@ -46,7 +46,7 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
       
       if (data.success) {
         setUser(data.user);
-        onClose();
+        onClose?.();
         
         // Check if profile is complete
         const isTrainer = data.user.role === 'trainer' || data.user.role === 'expert';
@@ -81,6 +81,7 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
         onClick={onClose}
         className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl focus:outline-none"
         aria-label="Close"
+        style={{ display: onClose ? 'block' : 'none' }}
       >
         <X size={28} />
       </button>
