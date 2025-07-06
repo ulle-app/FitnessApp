@@ -106,9 +106,6 @@ const BodyMeasurementHistory: React.FC<BodyMeasurementHistoryProps> = ({ userId,
     };
   };
 
-  const latest = getLatestMeasurement();
-  const trend = getTrend(selectedMetric);
-
   // Determine if a trend is good or bad based on the metric
   const isTrendPositive = (metric: string, isIncreasing: boolean) => {
     // For these metrics, decreasing is generally considered positive
@@ -129,6 +126,9 @@ const BodyMeasurementHistory: React.FC<BodyMeasurementHistoryProps> = ({ userId,
     
     return isIncreasing; // Default
   };
+
+  const latest = getLatestMeasurement();
+  const trend = getTrend(selectedMetric);
 
   return (
     <div className="bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-800 w-full">
