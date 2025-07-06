@@ -33,6 +33,8 @@ const Dashboard: React.FC = () => {
     waterIntake: [1.8, 2.2, 1.9, 2.5, 2.1, 2.3, 2.0],
     sleepHours: [6.5, 7.2, 6.8, 7.5, 7.0, 6.9, 7.3]
   });
+  const [assignedWorkouts, setAssignedWorkouts] = useState<any[]>([]);
+  const [loadingWorkouts, setLoadingWorkouts] = useState(true);
 
   // Calculate BMI
   const calculateBMI = () => {
@@ -185,6 +187,23 @@ const Dashboard: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  // Fetch assigned workouts
+  useEffect(() => {
+    if (user?.phone) {
+      setLoadingWorkouts(true);
+      fetch(`/api/trainer/user-workouts?user_id=${encodeURIComponent(user.phone)}`)
+        .then(res => res.json())
+        .then(data => {
+          setAssignedWorkouts(data.workouts || []);
+          setLoadingWorkouts(false);
+        })
+        .catch(err => {
+          console.error('Error fetching assigned workouts:', err);
+          setLoadingWorkouts(false);
+        });
+    }
+  }, [user?.phone]);
 
   if (!user) {
     navigate('/login');
@@ -606,15 +625,17 @@ const Dashboard: React.FC = () => {
             {/* Assigned Workouts */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <Dumbbell className="w-5 h-5 text-blue-600" />
+                <Dumbbell className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Assigned Workouts
               </h2>
               
-              {loadingWorkouts ? (
+              {loadingWorkouts && (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              ) : assignedWorkouts.length > 0 ? (
+              )}
+              
+              {!loadingWorkouts && assignedWorkouts.length > 0 && (
                 <div className="space-y-4">
                   {assignedWorkouts.map((workout, index) => (
                     <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-colors">
@@ -651,12 +672,17 @@ const Dashboard: React.FC = () => {
                     </div>
                   ))}
                   
-                  <button className="w-full py-3 mt-2 flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors">
+                  <button 
+                    className="w-full py-3 mt-2 flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
+                    onClick={() => console.log('View all workouts')}
+                  >
                     <span>View all workouts</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
-              ) : (
+              )}
+              
+              {!loadingWorkouts && assignedWorkouts.length === 0 && (
                 <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/20 rounded-xl">
                   <Dumbbell className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                   <p className="text-gray-500 dark:text-gray-400">No workouts assigned yet</p>
