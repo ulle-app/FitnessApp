@@ -278,12 +278,12 @@ app.post('/api/login', (req, res) => {
 // Send OTP endpoint
 app.post('/api/send-otp', (req, res) => {
   const { email, phone } = req.body;
-  console.log('[DEBUG] Send OTP request for:', email || phone);
+  console.log('[DEBUG] Send OTP request for:', email || phone, 'at', new Date().toISOString());
   const identifier = email || phone;
   if (!identifier) return res.status(400).json({ error: 'Email or phone required' });
   const otp = generateOTP();
   otps[identifier] = otp;
-  console.log('[DEBUG] Generated OTP for', identifier, ':', otp);
+  console.log('[DEBUG] Generated OTP for', identifier, ':', otp, 'at', new Date().toISOString());
   // In production, send OTP via SMS/email. For demo, return in response.
   res.json({ success: true, otp });
 });
@@ -331,15 +331,34 @@ app.get('/api/profile/username/:username', (req, res) => {
 app.post('/api/update-password', (req, res) => {
   const { phone, password, otp } = req.body;
   console.log('[DEBUG] Update password request for phone:', phone);
+  console.log('[DEBUG] Password provided:', password ? 'Yes' : 'No');
+  console.log('[DEBUG] OTP provided:', otp ? 'Yes' : 'No');
+  
   if (!phone || !password) return res.status(400).json({ error: 'Missing phone or password' });
-  // If admin, require OTP
+  
   db.get('SELECT * FROM profiles WHERE phone = ?', [phone], (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) return res.status(404).json({ error: 'User not found' });
+    console.log('[DEBUG] Found user for password reset:', user.username);
     
     // Check if OTP is required and valid
-    if (otp) {
+    if (user.role === 'admin') {
+      // Admin always requires OTP
+      if (!otp) {
+        console.log('[DEBUG] Admin requires OTP but none provided');
+        return res.status(401).json({ error: 'OTP required for admin password reset' });
+      }
+      
       console.log('[DEBUG] OTP provided:', otp, 'Stored OTP:', otps[phone]);
+      if (otps[phone] !== otp) {
+        console.log('[DEBUG] Invalid OTP for password reset');
+        return res.status(401).json({ error: 'Invalid OTP' });
+      }
+      delete otps[phone];
+      console.log('[DEBUG] OTP verified for password reset');
+    } else if (otp) {
+      // Non-admin with OTP provided - verify it
+      console.log('[DEBUG] Non-admin with OTP provided:', otp, 'Stored OTP:', otps[phone]);
       if (otps[phone] !== otp) {
         console.log('[DEBUG] Invalid OTP for password reset');
         return res.status(401).json({ error: 'Invalid OTP' });
@@ -350,6 +369,7 @@ app.post('/api/update-password', (req, res) => {
     
     const hashed = hashPassword(password);
     console.log('[DEBUG] Updating password for user:', user.username);
+    console.log('[DEBUG] New password hash:', hashed);
     db.run('UPDATE profiles SET password = ? WHERE phone = ?', [hashed, phone], function (err2) {
       if (err2) return res.status(500).json({ error: err2.message });
       if (this.changes === 0) return res.status(404).json({ error: 'User not found' });

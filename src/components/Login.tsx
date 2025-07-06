@@ -201,6 +201,12 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
     setForgotPassword({...forgotPassword, loading: true, message: ''});
     
     try {
+      console.log('Sending password reset request:', {
+        phone: forgotPassword.phone,
+        password: forgotPassword.newPassword,
+        otp: forgotPassword.otp
+      });
+      
       const res = await fetch('/api/update-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +217,9 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
         })
       });
       
+      console.log('Password reset response status:', res.status);
       const data = await res.json();
+      console.log('Password reset response:', data);
       
       if (data.success) {
         setForgotPassword({
@@ -429,7 +437,9 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
                 <p className="text-gray-300 mb-4 text-center">
                   Enter the 6-digit OTP sent to your phone number
                   <br/>
-                  <span className="text-xs text-yellow-400">(For demo: Check the message below)</span>
+                  <span className="text-xs text-yellow-400 mt-1 block">
+                    For demo purposes, the OTP is shown in the message below
+                  </span>
                 </p>
                 
                 <div className="flex items-center border-b border-gray-600">
