@@ -4,8 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from '../utils/constants';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
-import logoDark from '../assets/videos/logo_dark.png';
-import logoWhite from '../assets/videos/logo_white.png';
 import Login from './Login';
 
 export interface HeaderProps {
@@ -72,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick, onChangePa
           {/* Logo and Slogan */}
           <Link to="/" className="flex items-center space-x-4 group">
             <img
-              src={theme === 'dark' ? logoDark : logoWhite}
+              src={theme === 'dark' ? '/logo_dark.png' : '/logo_white.png'}
               alt="Heal Fitness Zone Logo"
               className="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full border-2 border-green-400 bg-white dark:bg-gray-900 group-hover:scale-105 transition-transform"
             />

@@ -3,7 +3,6 @@ import { useUser } from '../context/UserContext';
 import AdminTimeLogs from './AdminTimeLogs';
 import QRCode from 'qrcode.react';
 import Header from './Header';
-import logoDark from '../assets/videos/logo_dark.png';
 import { useNavigate } from 'react-router-dom';
 
 const sections = [
@@ -547,7 +546,7 @@ const AdminDashboard = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
             <div className="relative w-full max-w-md mx-auto bg-[#18181b] rounded-3xl shadow-2xl p-8 flex flex-col items-center animate-fade-in">
               <button onClick={() => setShowNewUserModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl focus:outline-none" aria-label="Close">×</button>
-              <img src={logoDark} alt="Heal Fitness Zone Logo" className="w-14 h-14 mx-auto mb-4 rounded-full border-2 border-green-400 bg-white dark:bg-gray-900" />
+              <img src="/logo_dark.png" alt="Heal Fitness Zone Logo" className="w-14 h-14 mx-auto mb-4 rounded-full border-2 border-green-400 bg-white dark:bg-gray-900" />
               <div className="text-3xl font-extrabold text-white mb-8 tracking-tight text-center">Add New User</div>
               <form className="w-full flex flex-col gap-4" onSubmit={handleCreateUser}>
                 <div className="w-full mb-4">
