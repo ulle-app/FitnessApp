@@ -24,39 +24,27 @@ import MyTimeLogs from './components/MyTimeLogs';
 import AdminTimeLogs from './components/AdminTimeLogs';
 import WorkoutManagement from './components/WorkoutManagement';
 import TriExpertDashboard from './components/TriExpertDashboard';
+import Login from './components/Login';
 
 type LandingPageProps = {
   user: any;
   onLogout: () => void;
 };
-<<<<<<< HEAD
-const LandingPage: React.FC<LandingPageProps> = ({ user, onLogout }) => {
-=======
 
-const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
->>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
+const LandingPage: React.FC<LandingPageProps> = ({ user, onLogout }) => {
   const [showSignup, setShowSignup] = React.useState(false);
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  
   React.useEffect(() => {
     if (user) {
       onLogout();
     }
   }, [user, onLogout]);
+  
   return (
-<<<<<<< HEAD
-  <>
-      {!isLoginPage && <Header onSignupClick={() => setShowSignup(true)} />}
-    <main>
-      <Hero />
-      <Services />
-      <Testimonials />
-      <Community />
-    </main>
-    <Footer />
-=======
     <>
-      <Header onSignupClick={() => setShowSignup(true)} />
+      {!isLoginPage && <Header onSignupClick={() => setShowSignup(true)} />}
       <main>
         <Hero />
         <Services />
@@ -64,7 +52,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
         <Community />
       </main>
       <Footer />
->>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
       {showSignup && (
         <AuthModal onClose={() => setShowSignup(false)} />
       )}
@@ -77,12 +64,8 @@ type AppRoutesProps = {
   onLogout: () => void;
   setUser: (user: any) => void;
 };
-<<<<<<< HEAD
-const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser, onLogout }) => {
-=======
 
-const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
->>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
+const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser, onLogout }) => {
   const { theme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -169,7 +152,6 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
             : <Navigate to="/onboarding" />
           : <Navigate to="/" />
       } />
-<<<<<<< HEAD
       <Route path="/login" element={<Login />} />
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/entry" element={<EntryPage />} />
@@ -178,20 +160,15 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
       <Route path="/admin/time-logs" element={<AdminTimeLogs />} />
       <Route path="/admin/workouts" element={<WorkoutManagement />} />
       <Route path="/trainer" element={<TrainerDashboard />} />
+      <Route path="/expert" element={<TriExpertDashboard />} />
       <Route path="*" element={
         user && user.role === 'user' && user.onboarding_completed !== 'true'
           ? <Navigate to="/timeline" />
-=======
-      
-      <Route path="*" element={
-        user && !isProfileComplete(user)
-          ? <Navigate to="/onboarding" />
->>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
           : <Navigate to="/" />
       } />
     </Routes>
-  )
-}
+  );
+};
 
 // Helper to check if user profile is complete
 function isProfileComplete(user: any) {
@@ -209,6 +186,6 @@ const App = () => {
       <AppRoutes user={user} onLogout={logout} setUser={setUser} />
     </BrowserRouter>
   );
-}
+};
 
 export default App;
