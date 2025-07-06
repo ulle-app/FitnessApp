@@ -7,17 +7,14 @@ import BMRCalculator from './components/tools/BMRCalculator';
 import BodyFatCalculator from './components/tools/BodyFatCalculator';
 import Calculators from './components/tools/Calculators';
 import MacroCalculator from './components/tools/MacroCalculator';
-// import AppDownload from './components/AppDownload';
 import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
-// import FittrHart from './components/FittrHart';
 import Community from './components/Community';
 import { useTheme } from './context/ThemeContext';
 import ToolsPage from './components/ToolsPage';
-import Onboarding from './components/Onboarding';
+import ModernOnboarding from './components/ModernOnboarding';
 import HeroStoryOnboarding from './components/HeroStoryOnboarding';
 import TimelineOnboarding from './components/TimelineOnboarding';
-import Login from './components/Login';
 import { useUser } from './context/UserContext';
 import Dashboard from './components/Dashboard';
 import AuthModal from './components/AuthModal';
@@ -32,7 +29,12 @@ type LandingPageProps = {
   user: any;
   onLogout: () => void;
 };
+<<<<<<< HEAD
 const LandingPage: React.FC<LandingPageProps> = ({ user, onLogout }) => {
+=======
+
+const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
+>>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
   const [showSignup, setShowSignup] = React.useState(false);
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
@@ -42,6 +44,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onLogout }) => {
     }
   }, [user, onLogout]);
   return (
+<<<<<<< HEAD
   <>
       {!isLoginPage && <Header onSignupClick={() => setShowSignup(true)} />}
     <main>
@@ -51,11 +54,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onLogout }) => {
       <Community />
     </main>
     <Footer />
+=======
+    <>
+      <Header onSignupClick={() => setShowSignup(true)} />
+      <main>
+        <Hero />
+        <Services />
+        <Testimonials />
+        <Community />
+      </main>
+      <Footer />
+>>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
       {showSignup && (
         <AuthModal onClose={() => setShowSignup(false)} />
       )}
-  </>
-);
+    </>
+  );
 };
 
 type AppRoutesProps = {
@@ -63,7 +77,12 @@ type AppRoutesProps = {
   onLogout: () => void;
   setUser: (user: any) => void;
 };
+<<<<<<< HEAD
 const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser, onLogout }) => {
+=======
+
+const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser }) => {
+>>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
   const { theme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -137,16 +156,20 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser, onLogout }) => {
           <Footer />
         </>
       } />
-      <Route path="/onboarding" element={user ? <TimelineOnboarding /> : <Navigate to="/" />} />
+      
+      {/* Updated onboarding routes */}
+      <Route path="/onboarding" element={user ? <ModernOnboarding /> : <Navigate to="/" />} />
       <Route path="/hero-story" element={user ? <HeroStoryOnboarding /> : <Navigate to="/" />} />
       <Route path="/timeline" element={user ? <TimelineOnboarding /> : <Navigate to="/" />} />
+      
       <Route path="/dashboard" element={
         user
           ? (isProfileComplete(user) && user.onboarding_completed === 'true')
             ? <Dashboard />
-            : <Navigate to="/timeline" />
+            : <Navigate to="/onboarding" />
           : <Navigate to="/" />
       } />
+<<<<<<< HEAD
       <Route path="/login" element={<Login />} />
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/entry" element={<EntryPage />} />
@@ -158,6 +181,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({ user, setUser, onLogout }) => {
       <Route path="*" element={
         user && user.role === 'user' && user.onboarding_completed !== 'true'
           ? <Navigate to="/timeline" />
+=======
+      
+      <Route path="*" element={
+        user && !isProfileComplete(user)
+          ? <Navigate to="/onboarding" />
+>>>>>>> 131197f10628ddc4a74b2b9a6875df5ced2a62cf
           : <Navigate to="/" />
       } />
     </Routes>
