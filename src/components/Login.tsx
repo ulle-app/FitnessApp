@@ -60,7 +60,24 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
       });
 
       console.log('Login response status:', res.status);
-      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const text = await res.text();
+      if (!text) {
+        throw new Error('Empty response from server');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', text);
+        throw new Error('Invalid response format from server');
+      }
+      
       console.log('Login response data:', data);
       
       if (data.success) {
@@ -85,11 +102,16 @@ const Login: React.FC<LoginProps> = ({ onClose, prefillPhone }) => {
         }
       } else {
         setError(data.error || 'Login failed. Please try again.');
-        setLoading(false);
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError('Network error. Please try again.');
+      if (err.message.includes('Failed to fetch') || err.message.includes('ECONNREFUSED')) {
+        setError('Unable to connect to server. Please ensure the backend is running.');
+      } else {
+        setError(err.message || 'Network error. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
